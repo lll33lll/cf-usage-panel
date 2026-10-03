@@ -155,6 +155,7 @@ body{
   text-align:center;padding:1rem;line-height:1.7}
 svg.chart{display:block;width:100%}
 svg.chart text{font-size:.6875rem;fill:var(--bc);opacity:.5}
+@media(max-width:560px){.card-body{padding:1.125rem}svg.chart text{font-size:.625rem}}
 svg.chart .grid-line{stroke:var(--b3);stroke-width:1}
 svg.chart .area{fill:url(#gTrend)}
 svg.chart .line{fill:none;stroke:var(--cf);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
@@ -937,7 +938,12 @@ function drawTrend(){
     ticks += '<text x="' + (padL - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end">' +
              compact(top * (1 - g / 4)) + '</text>';
   }
-  for (i = 0; i <= 24; i += 4){
+  // 按可用宽度挑刻度间隔：每格至少留 76px，窄屏自动降到 6 / 8 / 12 小时一格
+  var MIN_GAP = 76, cand = [4, 6, 8, 12, 24], step = 24;
+  for (var ci = 0; ci < cand.length; ci++){
+    if (iw / (24 / cand[ci]) >= MIN_GAP){ step = cand[ci]; break; }
+  }
+  for (i = 0; i <= 24; i += step){
     var anchor = i === 0 ? 'start' : (i === 24 ? 'end' : 'middle');
     ticks += '<text x="' + XB(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="' + anchor + '">' +
              pad2(bjHourOf(win.start + i * 3600000)) + ':00</text>';

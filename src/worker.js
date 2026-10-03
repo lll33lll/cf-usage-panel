@@ -993,7 +993,7 @@ async function 查询R2统计(API, headers, AccountID, 时间窗口) {
 async function getCloudflareUsage(Email, GlobalAPIKey, AccountID, APIToken) {
     const API = "https://api.cloudflare.com/client/v4";
     const cfg = { "Content-Type": "application/json" };
-    const fallback = 创建默认Usage(false, '❌ 无效TOKEN', plan);
+    const fallback = 创建默认Usage(false);
 
     try {
         if (!AccountID && (!Email || !GlobalAPIKey)) return fallback;

@@ -44,7 +44,7 @@ body{
 ::selection{background:color-mix(in srgb,var(--p) 30%,transparent)}
 
 /* ============ navbar ============ */
-.navbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,#F6821F,#FBAD41 38%,transparent 88%);pointer-events:none}
+.navbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,#F6821F,#FBAD41);pointer-events:none}
 .navbar{
   position:sticky;top:0;z-index:30;
   display:flex;align-items:center;justify-content:space-between;gap:1rem;
@@ -667,7 +667,7 @@ function renderAccounts(d, animate){
   var accounts = (d && d.accounts) || [];
   if (!accounts.length){
     meta.textContent = '';
-    list.className = 'grid';
+    list.classList.remove('enter');
     list.innerHTML =
       '<div class="card" style="grid-column:1/-1">' +
         '<div class="empty">' +
@@ -681,9 +681,9 @@ function renderAccounts(d, animate){
   meta.textContent = accounts.length + ' 个账号 · 更新于 ' + ago(d.UpdateTime);
   var html = '';
   for (var i = 0; i < accounts.length; i++) html += renderAccount(accounts[i]);
-  list.className = 'grid' + (animate ? ' enter' : '');
+  list.classList.toggle('enter', !!animate);
   list.innerHTML = html;
-  if (animate) setTimeout(function(){ list.className = 'grid'; }, 900);
+  if (animate) setTimeout(function(){ list.classList.remove('enter'); }, 900);
 }
 
 /* ---------------- 匿名显示（账户 A / B / C） ---------------- */

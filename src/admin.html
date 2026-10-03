@@ -185,6 +185,12 @@ body{
 .skel-stat{height:8.5rem}
 .skel-row{display:grid;gap:1.5rem;grid-template-columns:repeat(4,minmax(0,1fr))}
 
+/* 编辑弹窗里的「高级」折叠区 */
+.adv{margin-top:.25rem;border-top:1px solid var(--b3);padding-top:.5rem}
+.adv summary{cursor:pointer;font-size:.8125rem;opacity:.7;padding:.375rem 0;user-select:none}
+.adv summary:hover{opacity:1}
+.adv[open] summary{margin-bottom:.375rem}
+
 /* modal */
 .modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);
   display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
@@ -381,6 +387,41 @@ body{
   </div>
 </div>
 
+<div class="modal" id="editModal">
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <h3>编辑账号</h3>
+    <p class="hint">改名称立即生效；下面的 API 信息留空就保持原样，填了会重新校验一次</p>
+    <div id="editErr" class="alert-error" style="display:none"></div>
+    <div class="form-control">
+      <label for="edName">账号名称</label>
+      <input class="input" id="edName" type="text" maxlength="40" placeholder="账号名称" autocomplete="off">
+    </div>
+    <details class="adv">
+      <summary>修改 API 信息（可选）</summary>
+      <div class="form-control">
+        <label for="edAccountId">Account ID</label>
+        <input class="input" id="edAccountId" type="text" placeholder="留空则不变" autocomplete="off">
+      </div>
+      <div class="form-control">
+        <label for="edToken">API Token</label>
+        <input class="input" id="edToken" type="password" placeholder="留空则不变" autocomplete="off">
+      </div>
+      <div class="form-control">
+        <label for="edEmail">账号邮箱</label>
+        <input class="input" id="edEmail" type="email" placeholder="留空则不变" autocomplete="off">
+      </div>
+      <div class="form-control">
+        <label for="edKey">Global API Key</label>
+        <input class="input" id="edKey" type="password" placeholder="留空则不变" autocomplete="off">
+      </div>
+    </details>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeEdit()">取消</button>
+      <button class="btn btn-primary" id="editBtn" onclick="submitEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="confirmModal">
   <div class="modal-box" role="dialog" aria-modal="true">
     <h3 id="cfTitle">确认操作</h3>
@@ -554,6 +595,11 @@ function renderTable(accounts){
       '<td class="hide-sm"><span class="t-sub" title="' + fullTime(a.updateTime) + '">' +
         esc(ago(a.updateTime)) + '</span></td>' +
       '<td class="t-actions">' +
+        '<button class="icon-btn" title="编辑账号" onclick="openEdit(' +
+          esc(JSON.stringify(a.id)) + ')">' +
+          '<svg viewBox="0 0 24 24"><path d="M4 20h4L19.5 8.5a2.12 2.12 0 0 0-3-3L5 17v3z"></path>' +
+          '<path d="M14.5 6.5l3 3"></path></svg>' +
+        '</button>' +
         '<button class="icon-btn danger" title="删除账号" onclick="askDel(' +
           esc(JSON.stringify(a.id)) + ',' + esc(JSON.stringify(String(displayName(a)))) + ')">' +
           '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"></path>' +
@@ -699,6 +745,60 @@ async function submitAdd(){
   }
 }
 
+/* ---------- 编辑账号 ---------- */
+var editingId = null;
+function openEdit(id){
+  var a = null;
+  for (var i = 0; i < state.accounts.length; i++){
+    if (String(state.accounts[i].id) === String(id)){ a = state.accounts[i]; break; }
+  }
+  if (!a) return;
+  editingId = a.id;
+  document.getElementById('edName').value = a.name || '';
+  ['edAccountId','edToken','edEmail','edKey'].forEach(function(x){ document.getElementById(x).value = ''; });
+  document.getElementById('editErr').style.display = 'none';
+  document.getElementById('editModal').classList.add('modal-open');
+  document.getElementById('edName').focus();
+  document.getElementById('edName').select();
+}
+function closeEdit(){
+  document.getElementById('editModal').classList.remove('modal-open');
+  editingId = null;
+}
+function showEditErr(msg){
+  var err = document.getElementById('editErr');
+  err.textContent = msg; err.style.display = '';
+}
+async function submitEdit(){
+  var btn = document.getElementById('editBtn');
+  document.getElementById('editErr').style.display = 'none';
+  var name = document.getElementById('edName').value.trim();
+  if (!name) return showEditErr('账号名称不能为空');
+  var payload = { ID: editingId, Name: name };
+  var aid = document.getElementById('edAccountId').value.trim();
+  var tok = document.getElementById('edToken').value.trim();
+  var em = document.getElementById('edEmail').value.trim();
+  var gk = document.getElementById('edKey').value.trim();
+  if (aid) payload.AccountID = aid;
+  if (tok) payload.APIToken = tok;
+  if (em) payload.Email = em;
+  if (gk) payload.GlobalAPIKey = gk;
+  btn.disabled = true; btn.textContent = '保存中…';
+  try{
+    var r = await fetch('./api/edit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var d = await r.json();
+    if (d.success){ closeEdit(); toast(d.msg || '已保存'); load(true); }
+    else showEditErr(d.msg || '保存失败');
+  }catch(e){
+    showEditErr('网络错误：' + (e.message || '未知'));
+  }finally{
+    btn.disabled = false; btn.textContent = '保存';
+  }
+}
+
 /* ---------- 通用确认弹窗 ---------- */
 var pendingConfirm = null;
 function askConfirm(title, hint, okText, cb){
@@ -773,7 +873,7 @@ document.getElementById('inToken').addEventListener('keydown', function(e){
 })();
 applyAnonIcon();
 load(false);
-setInterval(function(){ load(false); }, 10 * 60 * 1000);
+setInterval(function(){ load(false); }, 5 * 60 * 1000);
 </script>
 </body>
 </html>

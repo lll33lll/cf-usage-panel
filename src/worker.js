@@ -161,7 +161,12 @@ export default {
                 if (request.method !== 'POST') {
                     return new Response(JSON.stringify({ success: false, msg: 'Method Not Allowed' }), { status: 405, headers: { 'Content-Type': 'application/json;charset=UTF-8' } });
                 }
-                if (!验证管理员Cookie()) return new Response(null, { status: 302, headers: { 'Location': '/' } });
+                if (!验证管理员Cookie()) {
+                    return new Response(JSON.stringify({ success: false, msg: '未登录或登录已过期，请重新登录' }), {
+                        status: 401,
+                        headers: { 'Content-Type': 'application/json;charset=UTF-8', 'Cache-Control': 'no-store' }
+                    });
+                }
 
                 if (区分大小写访问路径 === 'api/logout') {// 登出接口
                     return new Response(JSON.stringify({ success: true, msg: '登出成功' }), {
@@ -241,6 +246,80 @@ export default {
                     } catch (error) {
                         console.error('保存配置失败:', error);
                         return new Response(JSON.stringify({ success: false, msg: '保存配置失败: ' + error.message }), { status: 500, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                    }
+
+                } else if (区分大小写访问路径 === 'api/edit' && !演示样板) {// 修改CF账号
+                    try {
+                        const body = await request.json();
+                        const targetId = body.ID;
+                        if (targetId === undefined || targetId === null || targetId === '') {
+                            return new Response(JSON.stringify({ success: false, msg: '缺少账号 ID' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                        }
+
+                        let usage_config_json = await env.KV.get('usage_config.json', { type: 'json' });
+                        if (!Array.isArray(usage_config_json) || !usage_config_json.length) {
+                            return new Response(JSON.stringify({ success: false, msg: '账号配置为空' }), { status: 404, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                        }
+
+                        const targetIndex = usage_config_json.findIndex(item => String(item.ID) === String(targetId));
+                        if (targetIndex === -1) {
+                            return new Response(JSON.stringify({ success: false, msg: '未找到该账号' }), { status: 404, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                        }
+
+                        const account = usage_config_json[targetIndex];
+                        const oldName = account.Name || '未命名账号';
+
+                        // 1) 改名称
+                        if (typeof body.Name === 'string') {
+                            const name = body.Name.trim();
+                            if (!name) {
+                                return new Response(JSON.stringify({ success: false, msg: '账号名称不能为空' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                            }
+                            if (name.length > 40) {
+                                return new Response(JSON.stringify({ success: false, msg: '账号名称最多 40 个字符' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                            }
+                            account.Name = name;
+                        }
+
+                        // 2) 可选：改认证信息（留空 = 保持原样）
+                        const nextEmail = (typeof body.Email === 'string' && body.Email.trim()) ? body.Email.trim() : account.Email;
+                        const nextKey = (typeof body.GlobalAPIKey === 'string' && body.GlobalAPIKey.trim()) ? body.GlobalAPIKey.trim() : account.GlobalAPIKey;
+                        const nextAccountID = (typeof body.AccountID === 'string' && body.AccountID.trim()) ? body.AccountID.trim() : account.AccountID;
+                        const nextToken = (typeof body.APIToken === 'string' && body.APIToken.trim()) ? body.APIToken.trim() : account.APIToken;
+
+                        const authChanged = nextEmail !== account.Email || nextKey !== account.GlobalAPIKey
+                            || nextAccountID !== account.AccountID || nextToken !== account.APIToken;
+
+                        if (authChanged) {
+                            const hasEmailAuth = !!(nextEmail && nextKey);
+                            const hasTokenAuth = !!(nextAccountID && nextToken);
+                            if (!hasEmailAuth && !hasTokenAuth) {
+                                return new Response(JSON.stringify({ success: false, msg: '认证信息不完整：需要 AccountID + API Token 或 邮箱 + 全局密钥' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                            }
+                            const usage_result = await getCloudflareUsage(nextEmail, nextKey, nextAccountID, nextToken);
+                            if (!usage_result.success) {
+                                return new Response(JSON.stringify({ success: false, msg: '新的 API 信息校验失败，本次未做任何修改' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                            }
+                            account.Email = hasEmailAuth ? nextEmail : null;
+                            account.GlobalAPIKey = hasEmailAuth ? nextKey : null;
+                            account.AccountID = nextAccountID || null;
+                            account.APIToken = hasTokenAuth ? nextToken : null;
+                            account.Usage = 补全账号Usage结构({ ...account, Usage: usage_result });
+                            account.UpdateTime = Date.now();
+                            account.LastCheckTime = account.UpdateTime;
+                        }
+
+                        usage_config_json[targetIndex] = account;
+                        await env.KV.put('usage_config.json', JSON.stringify(usage_config_json));
+
+                        return new Response(JSON.stringify({
+                            success: true,
+                            msg: authChanged ? '账号信息已更新' : ('名称已改为「' + account.Name + '」'),
+                            data: { ID: account.ID, Name: account.Name, oldName }
+                        }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
+                    } catch (error) {
+                        console.error('修改账号失败:', error);
+                        return new Response(JSON.stringify({ success: false, msg: '修改失败: ' + error.message }), { status: 500, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                     }
 
                 } else if (区分大小写访问路径 === 'api/del' && !演示样板) {// 删除CF账号
@@ -326,7 +405,7 @@ const 免费额度 = {
     r2StorageBytes: 10 * 1024 * 1024 * 1024
 };
 
-const 默认单账号查询间隔毫秒 = 10 * 60 * 1000;
+const 默认单账号查询间隔毫秒 = 20 * 60 * 1000;
 const 默认每轮最多外部子请求数 = 50;
 
 const R2_CLASS_A_ACTIONS = new Set([

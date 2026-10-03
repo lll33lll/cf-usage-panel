@@ -1,0 +1,36 @@
+name: sync
+
+# 一次性工作流：同步项目文件与截图（完成后本文件会被删除）
+on:
+  push:
+    paths:
+      - '.github/workflows/sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download and verify
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/p.tar.gz \
+            'https://tmp-orange.abc1221.ccwu.cc/f/project.tar.gz'
+          echo "5d7e3b49d443cb2e8d1ff32e7a25db03bf9995342c6e470e556b51105fd601e4  /tmp/p.tar.gz" | sha256sum -c -
+          tar xzf /tmp/p.tar.gz -C .
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "style: 主色调换成 Cloudflare 橙 + 顶栏渐变线等橙色元素"
+          git push

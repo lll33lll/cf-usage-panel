@@ -255,8 +255,6 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
 }
 .card-body{padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
 .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem}
-.card-badges{display:flex;align-items:center;gap:.375rem;flex:none;flex-wrap:wrap;justify-content:flex-end}
-.badge-sm{font-size:.6875rem;padding:.125rem .4rem;height:auto;min-height:0;line-height:1.4}
 .card-title{font-size:1.0625rem;font-weight:600;line-height:1.3;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acct{font-size:.75rem;opacity:.5;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -464,7 +462,7 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
       <div class="card-body">
         <div class="chart-head">
           <div class="card-title">账号对比</div>
-          <span class="chart-sub" id="rankSub">今日请求</span>
+          <span class="chart-sub">今日请求</span>
         </div>
         <div class="rank" id="rankBox"></div>
       </div>
@@ -600,77 +598,33 @@ function resTemplate(){
   };
 }
 
-function sumByPlan(accounts, wantPaid){
-  var t = { total: 0, max: 0, workers: 0, pages: 0, count: 0, ok: 0, resources: resTemplate() };
-  for (var i = 0; i < accounts.length; i++){
-    var a = accounts[i];
-    if ((a.plan === 'paid') !== wantPaid) continue;
-    t.count++;
-    if (a.ok) t.ok++;
-    t.total += a.total || 0;
-    t.max += a.max || 0;
-    t.workers += a.workers || 0;
-    t.pages += a.pages || 0;
-    var r = a.resources || emptyRes();
-    ['kv', 'd1', 'r2'].forEach(function(k){
-      var src = r[k] || {}, dst = t.resources[k] || {};
-      for (var f in dst) dst[f] += Number(src[f]) || 0;
-    });
-  }
-  return t;
-}
-
 function renderKpis(d){
   var t = d.totals || {};
   var res = t.resources || emptyRes();
   var accounts = d.accounts || [];
   var okCount = 0;
   for (var i = 0; i < accounts.length; i++) if (accounts[i].ok) okCount++;
+  var kv = res.kv || {}, d1 = res.d1 || {}, r2 = res.r2 || {};
+  var max = t.max || (accounts.length ? accounts.length * MAX_REQ : MAX_REQ);
+  var total = t.total || 0;
+  var p = pct(total, max);
 
-  var freeT = sumByPlan(accounts, false);
-  var paidT = sumByPlan(accounts, true);
-  var hasFree = freeT.count > 0, hasPaid = paidT.count > 0;
-  var defaultOpen = !(hasFree && hasPaid);   // 混合默认收起，单模式默认展开
-
-  function heroBlock(label, sub, tt, key){
-    var mx = tt.max || (tt.count ? tt.count * MAX_REQ : MAX_REQ);
-    var pp = pct(tt.total, mx);
-    var r = tt.resources || resTemplate();
-    var kvR = (r.kv || {}).reads || 0;
-    var d1R = (r.d1 || {}).rowsRead || 0;
-    var open = defaultOpen;
-    return '<div class="stat-title"><span>' + esc(label) + '</span><span>' + pp.toFixed(1) + '%</span></div>' +
-      '<div class="stat-value">' + num(tt.total) + '<span class="unit">/ ' + num(mx) + '</span></div>' +
-      barHTML(tt.total, mx, '', true) +
-      (sub ? '<div class="stat-desc"><em>' + esc(sub) + '</em></div>' : '') +
-      '<button class="hero-toggle' + (open ? ' open' : '') + '" id="heroBtn-' + key + '"' +
-        ' aria-expanded="' + (open ? 'true' : 'false') + '" onclick="toggleHeroGrid(\'' + key + '\')">' +
-        '<span>' + (open ? '收起详情' : '展开详情') + '</span>' +
+  var hero =
+    '<div class="stat">' +
+      '<div class="stat-title"><span>今日请求总量</span><span>' + p.toFixed(1) + '%</span></div>' +
+      '<div class="stat-value">' + num(total) + '<span class="unit">/ ' + num(max) + '</span></div>' +
+      barHTML(total, max, '', true) +
+      '<button class="hero-toggle open" id="heroBtn-main" aria-expanded="true" onclick="toggleHeroGrid(\'main\')">' +
+        '<span>收起详情</span>' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6"></path></svg>' +
       '</button>' +
-      '<div class="stat-grid' + (open ? '' : ' hidden') + '" id="heroGrid-' + key + '">' +
-        '<div class="sg"><b>' + smartNum(tt.workers) + '</b><span>Workers</span></div>' +
-        '<div class="sg"><b>' + smartNum(tt.pages) + '</b><span>Pages</span></div>' +
-        '<div class="sg"><b>' + smartNum(kvR) + '</b><span>KV 读取</span></div>' +
-        '<div class="sg"><b>' + smartNum(d1R) + '</b><span>D1 行读取</span></div>' +
-      '</div>';
-  }
-
-  var hero;
-  if (hasFree && hasPaid){
-    hero = '<div class="stat">' +
-      heroBlock('免费账号 · 今日请求', freeT.count + ' 个免费账号', freeT, 'free') +
-      '<div class="stat-sep"></div>' +
-      heroBlock('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT, 'paid') +
+      '<div class="stat-grid" id="heroGrid-main">' +
+        '<div class="sg"><b>' + smartNum(t.workers) + '</b><span>Workers</span></div>' +
+        '<div class="sg"><b>' + smartNum(t.pages) + '</b><span>Pages</span></div>' +
+        '<div class="sg"><b>' + smartNum(kv.reads) + '</b><span>KV 读取</span></div>' +
+        '<div class="sg"><b>' + smartNum(d1.rowsRead) + '</b><span>D1 行读取</span></div>' +
+      '</div>' +
     '</div>';
-  } else if (hasPaid){
-    hero = '<div class="stat">' +
-      heroBlock('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT, 'paid') + '</div>';
-  } else {
-    var src = freeT.count ? freeT
-      : { total: t.total || 0, max: t.max || 0, workers: t.workers || 0, pages: t.pages || 0, count: accounts.length, resources: res };
-    hero = '<div class="stat">' + heroBlock('今日请求总量', '', src, 'free') + '</div>';
-  }
 
   function mini(label, sub, used, limit){
     var pp = pct(used, limit);
@@ -691,9 +645,6 @@ function renderKpis(d){
       '</div>' +
     '</div>';
 
-  var r2res = (hasFree ? freeT.resources : paidT.resources) || resTemplate();
-  var r2 = r2res.r2 || {};
-
   document.getElementById('overview').innerHTML =
     '<div class="stats">' + hero + accStat + mini('R2 Class A', '本月', r2.classA, r2.classALimit) + '</div>';
 }
@@ -707,10 +658,6 @@ function renderAccount(a){
   var st = a.ok
     ? '<span class="badge badge-success"><span class="dot"></span>正常</span>'
     : '<span class="badge badge-error"><span class="dot"></span>异常</span>';
-  var planBadge = a.plan === 'paid'
-    ? '<span class="badge badge-primary badge-sm" title="Workers 付费版">付费</span>'
-    : '<span class="badge badge-ghost badge-sm" title="Workers 免费版">免费</span>';
-  var cycleLbl = a.cycleLabel || (a.plan === 'paid' ? '本月' : '今日');
 
   var main =
     groupHTML('KV', [
@@ -744,11 +691,10 @@ function renderAccount(a){
         '<div style="min-width:0">' +
           '<div class="card-title" title="' + esc(displayName(a)) + '">' + esc(displayName(a)) + '</div>' +
           '<div class="acct">' + esc(displayAcct(a)) + '</div>' +
-        '</div>' +
-        '<div class="card-badges">' + planBadge + st + '</div>' +
+        '</div>' + st +
       '</div>' +
       '<div class="req">' +
-        '<div class="req-top"><span class="lbl">' + esc(cycleLbl) + '请求</span>' +
+        '<div class="req-top"><span class="lbl">今日请求</span>' +
           '<span class="num">' + num(total) + '<small>/ ' + num(max) + '</small></span></div>' +
         barHTML(total, max, '', true) +
         '<div class="req-split">' +
@@ -1162,11 +1108,7 @@ function drawTrend(){
 function renderRank(accounts){
   var box = document.getElementById('rankBox');
   if (!box) return;
-  // 按「占各自套餐上限的比例」排序，混合场景下免费/付费才可比
-  var list = (accounts || []).slice().sort(function(a, b){
-    var pa = (a.total || 0) / (a.max || 100000), pb = (b.total || 0) / (b.max || 100000);
-    return pb - pa;
-  });
+  var list = (accounts || []).slice().sort(function(a, b){ return (b.total || 0) - (a.total || 0); });
   if (!list.length){
     box.innerHTML = '<div class="chart-empty" style="min-height:6rem">暂无账号</div>';
     return;

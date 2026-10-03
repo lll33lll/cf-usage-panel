@@ -58,10 +58,6 @@ export default {
                         return {
                             id: item.ID === 0 || item.ID ? item.ID : index,
                             name: item.Name || ('账号 ' + (index + 1)),
-                            plan: 规范化套餐(item.Plan),
-                            planLabel: 取套餐额度(item.Plan).label,
-                            cycle: 取套餐额度(item.Plan).cycle,
-                            cycleLabel: 取套餐额度(item.Plan).cycleLabel,
                             accountId: item.AccountID ? 掩码敏感信息(item.AccountID) : (item.Email ? String(item.Email) : ''),
                             updateTime: 获取账号最后更新时间(item),
                             ok: !!usage.success,
@@ -193,10 +189,8 @@ export default {
                         }
 
                         const now = Date.now();
-                        const 套餐 = 规范化套餐(newConfig.Plan);
                         const CF_JSON = {
                             ID: 0,
-                            Plan: 套餐,
                             Name: newConfig.Name || '未命名账号',
                             Email: hasEmailAuth ? newConfig.Email : null,
                             GlobalAPIKey: hasEmailAuth ? newConfig.GlobalAPIKey : null,
@@ -204,11 +198,11 @@ export default {
                             APIToken: hasTokenAuth ? newConfig.APIToken : null,
                             UpdateTime: now,
                             LastCheckTime: now,
-                            Usage: 创建默认Usage(false, '❌ 无效TOKEN', 套餐)
+                            Usage: 创建默认Usage(false)
                         };
 
                         // 验证 API 信息是否有效
-                        const usage_result = await getCloudflareUsage(CF_JSON.Email, CF_JSON.GlobalAPIKey, CF_JSON.AccountID, CF_JSON.APIToken, 套餐);
+                        const usage_result = await getCloudflareUsage(CF_JSON.Email, CF_JSON.GlobalAPIKey, CF_JSON.AccountID, CF_JSON.APIToken);
                         if (!usage_result.success) {
                             return new Response(JSON.stringify({ success: false, msg: '无法验证该CF账号的API信息' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                         }
@@ -274,8 +268,6 @@ export default {
 
                         const account = usage_config_json[targetIndex];
                         const oldName = account.Name || '未命名账号';
-                        const oldPlan = 规范化套餐(account.Plan);
-                        const nextPlan = (typeof body.Plan === 'string' && body.Plan) ? 规范化套餐(body.Plan) : oldPlan;
 
                         // 1) 改名称
                         if (typeof body.Name === 'string') {
@@ -295,17 +287,16 @@ export default {
                         const nextAccountID = (typeof body.AccountID === 'string' && body.AccountID.trim()) ? body.AccountID.trim() : account.AccountID;
                         const nextToken = (typeof body.APIToken === 'string' && body.APIToken.trim()) ? body.APIToken.trim() : account.APIToken;
 
-                        const planChanged = nextPlan !== oldPlan;
                         const authChanged = nextEmail !== account.Email || nextKey !== account.GlobalAPIKey
                             || nextAccountID !== account.AccountID || nextToken !== account.APIToken;
 
-                        if (authChanged || planChanged) {
+                        if (authChanged) {
                             const hasEmailAuth = !!(nextEmail && nextKey);
                             const hasTokenAuth = !!(nextAccountID && nextToken);
                             if (!hasEmailAuth && !hasTokenAuth) {
                                 return new Response(JSON.stringify({ success: false, msg: '认证信息不完整：需要 AccountID + API Token 或 邮箱 + 全局密钥' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                             }
-                            const usage_result = await getCloudflareUsage(nextEmail, nextKey, nextAccountID, nextToken, nextPlan);
+                            const usage_result = await getCloudflareUsage(nextEmail, nextKey, nextAccountID, nextToken);
                             if (!usage_result.success) {
                                 return new Response(JSON.stringify({ success: false, msg: '新的 API 信息校验失败，本次未做任何修改' }), { status: 400, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                             }
@@ -313,12 +304,9 @@ export default {
                             account.GlobalAPIKey = hasEmailAuth ? nextKey : null;
                             account.AccountID = nextAccountID || null;
                             account.APIToken = hasTokenAuth ? nextToken : null;
-                            account.Plan = nextPlan;
                             account.Usage = 补全账号Usage结构({ ...account, Usage: usage_result });
                             account.UpdateTime = Date.now();
                             account.LastCheckTime = account.UpdateTime;
-                        } else if (typeof body.Plan === 'string' && body.Plan) {
-                            account.Plan = nextPlan;
                         }
 
                         usage_config_json[targetIndex] = account;
@@ -326,10 +314,8 @@ export default {
 
                         return new Response(JSON.stringify({
                             success: true,
-                            msg: (authChanged || planChanged)
-                                ? ('账号信息已更新' + (planChanged ? '（套餐：' + 取套餐额度(nextPlan).label + '）' : ''))
-                                : ('名称已改为「' + account.Name + '」'),
-                            data: { ID: account.ID, Name: account.Name, oldName, Plan: 规范化套餐(account.Plan) }
+                            msg: authChanged ? '账号信息已更新' : ('名称已改为「' + account.Name + '」'),
+                            data: { ID: account.ID, Name: account.Name, oldName }
                         }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                     } catch (error) {
                         console.error('修改账号失败:', error);
@@ -375,7 +361,7 @@ export default {
 
                 } else if (区分大小写访问路径 === 'api/check' && !演示样板) {// 检查单个CF账号请求量接口
                     try {
-                        const Usage_JSON = await getCloudflareUsage(url.searchParams.get('Email'), url.searchParams.get('GlobalAPIKey'), url.searchParams.get('AccountID'), url.searchParams.get('APIToken'), 规范化套餐(url.searchParams.get('Plan')));
+                        const Usage_JSON = await getCloudflareUsage(url.searchParams.get('Email'), url.searchParams.get('GlobalAPIKey'), url.searchParams.get('AccountID'), url.searchParams.get('APIToken'));
                         return new Response(JSON.stringify(Usage_JSON, null, 2), { status: 200, headers: { 'Content-Type': 'application/json' } });
                     } catch (err) {
                         const errorResponse = { msg: '查询请求量失败，失败原因：' + err.message, error: err.message };
@@ -404,50 +390,20 @@ export default {
 };
 
 ////////////////////////////////功能函数//////////////////////////////////
-// 免费版按「天」重置（UTC 00:00 = 北京 08:00），付费版按「月」
-const 套餐额度 = {
-    free: {
-        plan: 'free', label: '免费版', cycle: 'day', cycleLabel: '今日',
-        requests: 100000,
-        d1RowsRead: 5000000,
-        d1RowsWritten: 100000,
-        d1StorageBytes: 5 * 1024 * 1024 * 1024,
-        kvReads: 100000,
-        kvWrites: 1000,
-        kvDeletes: 1000,
-        kvLists: 1000,
-        kvStorageBytes: 1 * 1024 * 1024 * 1024,
-        r2ClassA: 1000000,
-        r2ClassB: 10000000,
-        r2StorageBytes: 10 * 1024 * 1024 * 1024
-    },
-    paid: {
-        plan: 'paid', label: '付费版', cycle: 'month', cycleLabel: '本月',
-        requests: 10000000,
-        d1RowsRead: 25000000000,
-        d1RowsWritten: 50000000,
-        d1StorageBytes: 5 * 1024 * 1024 * 1024,
-        kvReads: 10000000,
-        kvWrites: 1000000,
-        kvDeletes: 1000000,
-        kvLists: 1000000,
-        kvStorageBytes: 1 * 1024 * 1024 * 1024,
-        r2ClassA: 1000000,
-        r2ClassB: 10000000,
-        r2StorageBytes: 10 * 1024 * 1024 * 1024
-    }
+const 免费额度 = {
+    requestsDaily: 100000,
+    d1RowsReadDaily: 5000000,
+    d1RowsWrittenDaily: 100000,
+    d1StorageBytes: 5 * 1024 * 1024 * 1024,
+    kvReadsDaily: 100000,
+    kvWritesDaily: 1000,
+    kvDeletesDaily: 1000,
+    kvListsDaily: 1000,
+    kvStorageBytes: 1 * 1024 * 1024 * 1024,
+    r2ClassAMonthly: 1000000,
+    r2ClassBMonthly: 10000000,
+    r2StorageBytes: 10 * 1024 * 1024 * 1024
 };
-
-// 向后兼容：默认档位
-const 免费额度 = 套餐额度.free;
-
-function 取套餐额度(plan) {
-    return 套餐额度[plan] || 套餐额度.free;
-}
-
-function 规范化套餐(plan) {
-    return String(plan || '').toLowerCase() === 'paid' ? 'paid' : 'free';
-}
 
 const 默认单账号查询间隔毫秒 = 20 * 60 * 1000;
 const 默认每轮最多外部子请求数 = 50;
@@ -466,47 +422,46 @@ const R2_CLASS_B_ACTIONS = new Set([
 
 const R2_FREE_ACTIONS = new Set(['deleteobject', 'deleteobjects', 'deletebucket', 'abortmultipartupload']);
 
-function 创建默认资源统计(plan = 'free') {
-    const L = 取套餐额度(plan);
+function 创建默认资源统计() {
     return {
         d1: {
             rowsRead: 0,
-            rowsReadLimit: L.d1RowsRead,
+            rowsReadLimit: 免费额度.d1RowsReadDaily,
             rowsWritten: 0,
-            rowsWrittenLimit: L.d1RowsWritten,
+            rowsWrittenLimit: 免费额度.d1RowsWrittenDaily,
             readQueries: 0,
             writeQueries: 0,
             storageBytes: 0,
-            storageLimitBytes: L.d1StorageBytes,
+            storageLimitBytes: 免费额度.d1StorageBytes,
             databases: 0,
-            period: L.cycle
+            period: 'day'
         },
         kv: {
             reads: 0,
-            readsLimit: L.kvReads,
+            readsLimit: 免费额度.kvReadsDaily,
             writes: 0,
-            writesLimit: L.kvWrites,
+            writesLimit: 免费额度.kvWritesDaily,
             deletes: 0,
-            deletesLimit: L.kvDeletes,
+            deletesLimit: 免费额度.kvDeletesDaily,
             lists: 0,
-            listsLimit: L.kvLists,
+            listsLimit: 免费额度.kvListsDaily,
             operations: 0,
             storageBytes: 0,
-            storageLimitBytes: L.kvStorageBytes,
+            storageLimitBytes: 免费额度.kvStorageBytes,
             keys: 0,
             namespaces: 0,
-            period: L.cycle
+            period: 'day'
         },
         r2: {
             classA: 0,
-            classALimit: L.r2ClassA,
+            classALimit: 免费额度.r2ClassAMonthly,
             classB: 0,
-            classBLimit: L.r2ClassB,
+            classBLimit: 免费额度.r2ClassBMonthly,
             free: 0,
             other: 0,
             operations: 0,
             storageBytes: 0,
-            storageLimitBytes: L.r2StorageBytes,
+            storageLimitBytes: 免费额度.r2StorageBytes,
             objects: 0,
             buckets: 0,
             period: 'month'
@@ -514,8 +469,8 @@ function 创建默认资源统计(plan = 'free') {
     };
 }
 
-function 创建汇总资源统计(plan = 'free') {
-    const resources = 创建默认资源统计(plan);
+function 创建汇总资源统计() {
+    const resources = 创建默认资源统计();
     resources.d1.rowsReadLimit = 0;
     resources.d1.rowsWrittenLimit = 0;
     resources.d1.storageLimitBytes = 0;
@@ -530,19 +485,14 @@ function 创建汇总资源统计(plan = 'free') {
     return resources;
 }
 
-function 创建默认Usage(success = false, msg = '❌ 无效TOKEN', plan = 'free') {
-    const L = 取套餐额度(plan);
+function 创建默认Usage(success = false, msg = '❌ 无效TOKEN') {
     return {
         success,
         pages: 0,
         workers: 0,
         total: 0,
-        max: success ? L.requests : 0,
-        plan: L.plan,
-        planLabel: L.label,
-        cycle: L.cycle,
-        cycleLabel: L.cycleLabel,
-        resources: 创建默认资源统计(plan),
+        max: success ? 免费额度.requestsDaily : 0,
+        resources: 创建默认资源统计(),
         UpdateTime: Date.now(),
         msg
     };
@@ -621,25 +571,16 @@ function 获取趋势窗口起点() {
     return new Date(start);
 }
 
-function 获取统计时间窗口(plan = 'free') {
-    const L = 取套餐额度(plan);
+function 获取统计时间窗口() {
     const now = new Date();
     const dayStart = new Date(now);
     dayStart.setUTCHours(0, 0, 0, 0);
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     const trendStart = 获取趋势窗口起点();
 
-    // 免费版看「今日」（UTC 00:00 = 北京 08:00），付费版看「本月」
-    const windowStart = L.cycle === 'month' ? monthStart : dayStart;
-
     return {
-        plan: L.plan,
-        cycle: L.cycle,
-        cycleLabel: L.cycleLabel,
         nowIso: now.toISOString(),
         trendStartIso: trendStart.toISOString(),
-        windowStartIso: windowStart.toISOString(),
-        windowStartDate: windowStart.toISOString().slice(0, 10),
         dayStartIso: dayStart.toISOString(),
         monthStartIso: monthStart.toISOString(),
         dayStartDate: dayStart.toISOString().slice(0, 10),
@@ -743,7 +684,7 @@ async function 更新请求数(env, options = {}) {
 
         await Promise.all(accountsToRefresh.map(async ({ account }) => {
             try {
-                const usage = await getCloudflareUsage(account.Email, account.GlobalAPIKey, account.AccountID, account.APIToken, 规范化套餐(account.Plan));
+                const usage = await getCloudflareUsage(account.Email, account.GlobalAPIKey, account.AccountID, account.APIToken);
                 if (!usage.success) {
                     写入账号查询失败(account, usage, Date.now());
                     failedRefreshCount += 1;
@@ -893,7 +834,7 @@ async function 查询WorkersPages统计(API, headers, AccountID, 时间窗口) {
         } }
     }`, {
         AccountID,
-        filter: { datetime_geq: 时间窗口.windowStartIso, datetime_leq: 时间窗口.nowIso }
+        filter: { datetime_geq: 时间窗口.dayStartIso, datetime_leq: 时间窗口.nowIso }
     });
 
     return {
@@ -939,7 +880,7 @@ async function 查询请求趋势(API, headers, AccountID, 时间窗口) {
 }
 
 async function 查询D1统计(API, headers, AccountID, 时间窗口) {
-    const d1 = 创建默认资源统计(时间窗口.plan).d1;
+    const d1 = 创建默认资源统计().d1;
     const account = await 发送GraphQL请求(API, headers, `query D1Usage($accountTag: String!, $dayStart: Date!, $dateEnd: Date!, $storageStart: Date!) {
         viewer { accounts(filter: {accountTag: $accountTag}) {
             d1AnalyticsAdaptiveGroups(limit: 10000, filter: {date_geq: $dayStart, date_leq: $dateEnd}) {
@@ -953,7 +894,7 @@ async function 查询D1统计(API, headers, AccountID, 时间窗口) {
         } }
     }`, {
         accountTag: AccountID,
-        dayStart: 时间窗口.windowStartDate,
+        dayStart: 时间窗口.dayStartDate,
         dateEnd: 时间窗口.dateEnd,
         storageStart: 时间窗口.monthStartDate
     });
@@ -972,7 +913,7 @@ async function 查询D1统计(API, headers, AccountID, 时间窗口) {
 }
 
 async function 查询KV统计(API, headers, AccountID, 时间窗口) {
-    const kv = 创建默认资源统计(时间窗口.plan).kv;
+    const kv = 创建默认资源统计().kv;
     const account = await 发送GraphQL请求(API, headers, `query KvUsage($accountTag: String!, $dayStart: Date!, $dateEnd: Date!, $storageStart: Date!) {
         viewer { accounts(filter: {accountTag: $accountTag}) {
             kvOperationsAdaptiveGroups(limit: 10000, filter: {date_geq: $dayStart, date_leq: $dateEnd}) {
@@ -986,7 +927,7 @@ async function 查询KV统计(API, headers, AccountID, 时间窗口) {
         } }
     }`, {
         accountTag: AccountID,
-        dayStart: 时间窗口.windowStartDate,
+        dayStart: 时间窗口.dayStartDate,
         dateEnd: 时间窗口.dateEnd,
         storageStart: 时间窗口.monthStartDate
     });
@@ -1010,7 +951,7 @@ async function 查询KV统计(API, headers, AccountID, 时间窗口) {
 }
 
 async function 查询R2统计(API, headers, AccountID, 时间窗口) {
-    const r2 = 创建默认资源统计(时间窗口.plan).r2;
+    const r2 = 创建默认资源统计().r2;
     const account = await 发送GraphQL请求(API, headers, `query R2Usage($accountTag: String!, $monthStart: Time!, $now: Time!) {
         viewer { accounts(filter: {accountTag: $accountTag}) {
             r2OperationsAdaptiveGroups(limit: 10000, filter: {datetime_geq: $monthStart, datetime_leq: $now}) {
@@ -1049,8 +990,7 @@ async function 查询R2统计(API, headers, AccountID, 时间窗口) {
     return r2;
 }
 
-async function getCloudflareUsage(Email, GlobalAPIKey, AccountID, APIToken, plan = 'free') {
-    const 套餐 = 取套餐额度(plan);
+async function getCloudflareUsage(Email, GlobalAPIKey, AccountID, APIToken) {
     const API = "https://api.cloudflare.com/client/v4";
     const cfg = { "Content-Type": "application/json" };
     const fallback = 创建默认Usage(false, '❌ 无效TOKEN', plan);
@@ -1061,14 +1001,14 @@ async function getCloudflareUsage(Email, GlobalAPIKey, AccountID, APIToken, plan
         const hdr = APIToken ? { ...cfg, "Authorization": `Bearer ${APIToken}` } : { ...cfg, "X-AUTH-EMAIL": Email, "X-AUTH-KEY": GlobalAPIKey };
         if (!AccountID) AccountID = await 获取Cloudflare账户ID(API, hdr, Email);
 
-        const 时间窗口 = 获取统计时间窗口(plan);
-        const usage = 创建默认Usage(true, '✅ 成功更新' + 套餐.cycleLabel + '使用数据', plan);
+        const 时间窗口 = 获取统计时间窗口();
+        const usage = 创建默认Usage(true, '✅ 成功更新免费额度使用数据');
         const core = await 查询WorkersPages统计(API, hdr, AccountID, 时间窗口);
 
         usage.pages = core.pages;
         usage.workers = core.workers;
         usage.total = core.pages + core.workers;
-        usage.max = 套餐.requests;
+        usage.max = 免费额度.requestsDaily;
 
         const errors = [];
         const safeQuery = async (label, query, defaultValue) => {
@@ -1082,9 +1022,9 @@ async function getCloudflareUsage(Email, GlobalAPIKey, AccountID, APIToken, plan
         };
 
         const [d1, kv, r2, trend] = await Promise.all([
-            safeQuery('D1', () => 查询D1统计(API, hdr, AccountID, 时间窗口), 创建默认资源统计(plan).d1),
-            safeQuery('KV', () => 查询KV统计(API, hdr, AccountID, 时间窗口), 创建默认资源统计(plan).kv),
-            safeQuery('R2', () => 查询R2统计(API, hdr, AccountID, 时间窗口), 创建默认资源统计(plan).r2),
+            safeQuery('D1', () => 查询D1统计(API, hdr, AccountID, 时间窗口), 创建默认资源统计().d1),
+            safeQuery('KV', () => 查询KV统计(API, hdr, AccountID, 时间窗口), 创建默认资源统计().kv),
+            safeQuery('R2', () => 查询R2统计(API, hdr, AccountID, 时间窗口), 创建默认资源统计().r2),
             safeQuery('趋势', () => 查询请求趋势(API, hdr, AccountID, 时间窗口), [])
         ]);
 

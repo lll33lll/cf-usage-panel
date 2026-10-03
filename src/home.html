@@ -201,64 +201,29 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
   box-shadow:var(--shadow);overflow:hidden;
 }
 .stats.cols-6{grid-template-columns:2fr repeat(5,minmax(0,1fr))}
-/* ============ 总请求主卡 ============ */
-.hero-card-wrap{margin-bottom:1.5rem}
-.hero-card{background:var(--b1);border-radius:var(--rounded-box);box-shadow:var(--shadow);
-  padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
-.hero-sec{display:flex;flex-direction:column;gap:1rem;min-width:0}
-.hero-sep{height:1px;background:var(--b3)}
-.hero-head{display:flex;align-items:center;justify-content:space-between;gap:1rem}
-.hero-title{font-size:1.125rem;font-weight:700;letter-spacing:-.01em;min-width:0}
-.hero-collapse{width:2.25rem;height:2.25rem;border-radius:.75rem;border:1px solid var(--b3);
-  background:var(--b1);display:flex;align-items:center;justify-content:center;cursor:pointer;
-  flex:none;padding:0;transition:box-shadow .15s}
-.hero-collapse:hover{box-shadow:0 2px 8px rgba(0,0,0,.12)}
-.hero-collapse svg{width:1.125rem;height:1.125rem;transition:transform .25s ease}
-.hero-collapse.open svg{transform:rotate(0deg)}
-.hero-collapse:not(.open) svg{transform:rotate(180deg)}
-.hero-body{display:flex;flex-direction:column;gap:1rem}
-.hero-body.hidden{display:none}
-
-/* 大进度条：条内居中白字 */
-.hero-bar{position:relative;height:2.75rem;border-radius:999px;overflow:hidden;
-  background:linear-gradient(90deg,#6b7280,#4b5563)}
-.hero-bar>i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;
-  background:linear-gradient(90deg,#1d4ed8,#3b82f6 55%,#60a5fa);
-  transition:width .5s cubic-bezier(.22,1,.36,1)}
-.hero-bar>span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:1.0625rem;font-weight:800;color:#fff;letter-spacing:.01em;
-  text-shadow:0 1px 4px rgba(0,0,0,.45);white-space:nowrap;padding:0 1.25rem;
-  text-overflow:ellipsis;overflow:hidden}
-
-/* 三格数据 */
-.hero-cells{background:#eaf3ff;border-left:4px solid #3b82f6;border-radius:.75rem;
-  padding:1rem 1.25rem;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.875rem}
-.hc{display:flex;flex-direction:column;gap:.3125rem;min-width:0}
-.hc>span{font-size:.875rem;opacity:.62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hc>b{font-size:1.625rem;font-weight:800;letter-spacing:-.02em;
+/* ============ 概览区 ============ */
+.stats{
+  display:grid;grid-template-columns:2fr repeat(2,minmax(0,1fr));
+  background:var(--b1);border-radius:var(--rounded-box);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.stats>.stat{justify-content:center}
+.stats>.stat:first-child{justify-content:flex-start}
+.stat-sep{height:1px;background:var(--b3);margin:.5rem 0}
+/* 主卡里的四个数据格 */
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem}
+.stat-grid.hidden{display:none}
+.sg{background:var(--b2);border-radius:.5rem;padding:.5rem .625rem;
+  display:flex;flex-direction:column;gap:.125rem;min-width:0}
+.sg b{font-size:.9375rem;font-weight:700;letter-spacing:-.01em;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.c-green{color:#0ca678}
-.c-blue{color:#2563eb}
-.c-amber{color:#f59e0b}
-
-/* 重置倒计时 */
-.hero-tip{background:#fffaf0;border:1px solid #f5d9a8;border-radius:.75rem;
-  padding:1rem 1.125rem;display:flex;gap:.75rem;align-items:flex-start}
-.hero-tip .ti{width:1.625rem;height:1.625rem;border-radius:.4375rem;background:#8aa6bd;color:#fff;
-  display:flex;align-items:center;justify-content:center;flex:none;
-  font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:1.0625rem}
-.hero-tip>b{font-size:1rem;display:block;font-weight:700}
-.hero-tip p{margin:.3125rem 0 0;font-size:.9375rem;line-height:1.55;opacity:.78}
-.hero-tip em{font-style:normal;color:#f59e0b;font-weight:700}
-[data-theme="dark"] .hero-cells{background:rgba(59,130,246,.12)}
-[data-theme="dark"] .hero-tip{background:rgba(245,158,11,.09);border-color:rgba(245,158,11,.32)}
-[data-theme="dark"] .c-green{color:#34d399}
-[data-theme="dark"] .c-blue{color:#60a5fa}
-[data-theme="dark"] .c-amber{color:#fbbf24}
-[data-theme="dark"] .hero-tip em{color:#fbbf24}
-
-/* 主卡下面那排小卡 */
-.stats.mini-row{grid-template-columns:repeat(auto-fit,minmax(15rem,1fr))}
+.sg span{font-size:.6875rem;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-toggle{display:flex;align-items:center;gap:.25rem;font-size:.75rem;opacity:.55;
+  background:none;border:none;padding:.125rem 0;cursor:pointer;color:inherit;
+  align-self:flex-start;font-family:inherit}
+.hero-toggle:hover{opacity:1}
+.hero-toggle svg{width:.75rem;height:.75rem;transition:transform .2s ease}
+.hero-toggle.open svg{transform:rotate(180deg)}
 .stat{
   padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.375rem;
   border-left:1px solid var(--b3);min-width:0;
@@ -655,33 +620,6 @@ function sumByPlan(accounts, wantPaid){
   return t;
 }
 
-// 距下次重置还有多久（免费=次日 UTC 00:00 即北京 8:00，付费=下月 1 日）
-function resetRemain(cycle){
-  var now = Date.now();
-  var d = new Date(now);
-  var target = cycle === 'month'
-    ? Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1)
-    : Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
-  var diff = Math.max(0, target - now);
-  var h = Math.floor(diff / 3600000);
-  var m = Math.floor(diff % 3600000 / 60000);
-  var sec = Math.floor(diff % 60000 / 1000);
-  return h + '小时' + m + '分' + sec + '秒';
-}
-
-var resetTimer = null;
-function tickReset(){
-  var els = document.querySelectorAll('[data-reset]');
-  for (var i = 0; i < els.length; i++){
-    els[i].textContent = resetRemain(els[i].getAttribute('data-reset'));
-  }
-}
-function startResetTimer(){
-  if (resetTimer) return;
-  tickReset();
-  resetTimer = setInterval(tickReset, 1000);
-}
-
 function renderKpis(d){
   var t = d.totals || {};
   var res = t.resources || emptyRes();
@@ -694,57 +632,44 @@ function renderKpis(d){
   var hasFree = freeT.count > 0, hasPaid = paidT.count > 0;
   var defaultOpen = !(hasFree && hasPaid);   // 混合默认收起，单模式默认展开
 
-  function heroSection(title, tt, cycle, open, key){
+  function heroBlock(label, sub, tt, key){
     var mx = tt.max || (tt.count ? tt.count * MAX_REQ : MAX_REQ);
     var pp = pct(tt.total, mx);
-    var isMonth = cycle === 'month';
-    var barW = Math.max(pp > 0 ? 1.5 : 0, Math.min(100, pp));
-    return '<div class="hero-sec">' +
-      '<div class="hero-head">' +
-        '<div class="hero-title">' + esc(title) + '</div>' +
-        '<button class="hero-collapse' + (open ? ' open' : '') + '" id="heroBtn-' + key + '"' +
-          ' aria-expanded="' + (open ? 'true' : 'false') + '" title="' + (open ? '收起' : '展开') + '"' +
-          ' onclick="toggleHeroGrid(\'' + key + '\')">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"></path></svg>' +
-        '</button>' +
-      '</div>' +
-      '<div class="hero-body' + (open ? '' : ' hidden') + '" id="heroGrid-' + key + '">' +
-        '<div class="hero-bar">' +
-          '<i style="width:' + barW.toFixed(2) + '%"></i>' +
-          '<span>请求使用进度：' + num(tt.total) + '（' + pp.toFixed(2) + '%）</span>' +
-        '</div>' +
-        '<div class="hero-cells">' +
-          '<div class="hc"><span>Workers 请求</span><b class="c-green">' + num(tt.workers) + '</b></div>' +
-          '<div class="hc"><span>Pages 请求</span><b class="c-blue">' + num(tt.pages) + '</b></div>' +
-          '<div class="hc"><span>' + (isMonth ? '月配额' : '日配额') + '</span><b class="c-amber">' + num(mx) + '</b></div>' +
-        '</div>' +
-        '<div class="hero-tip">' +
-          '<span class="ti">i</span>' +
-          '<div>' +
-            '<b>' + (isMonth ? '每月' : '每日') + '请求数重置清零：</b>' +
-            '<p>距离重置还有 <em data-reset="' + cycle + '">' + resetRemain(cycle) + '</em>，</p>' +
-            '<p>北京时间 (UTC+8) <em>' + (isMonth ? '每月 1 日 8:00' : '8:00') + '</em> 重置，</p>' +
-            '<p>' + (isMonth ? '本月' : '今日') + '使用情况总计：<em>' + num(tt.total) + '</em>。</p>' +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-    '</div>';
+    var r = tt.resources || resTemplate();
+    var kvR = (r.kv || {}).reads || 0;
+    var d1R = (r.d1 || {}).rowsRead || 0;
+    var open = defaultOpen;
+    return '<div class="stat-title"><span>' + esc(label) + '</span><span>' + pp.toFixed(1) + '%</span></div>' +
+      '<div class="stat-value">' + num(tt.total) + '<span class="unit">/ ' + num(mx) + '</span></div>' +
+      barHTML(tt.total, mx, '', true) +
+      (sub ? '<div class="stat-desc"><em>' + esc(sub) + '</em></div>' : '') +
+      '<button class="hero-toggle' + (open ? ' open' : '') + '" id="heroBtn-' + key + '"' +
+        ' aria-expanded="' + (open ? 'true' : 'false') + '" onclick="toggleHeroGrid(\'' + key + '\')">' +
+        '<span>' + (open ? '收起详情' : '展开详情') + '</span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6"></path></svg>' +
+      '</button>' +
+      '<div class="stat-grid' + (open ? '' : ' hidden') + '" id="heroGrid-' + key + '">' +
+        '<div class="sg"><b>' + smartNum(tt.workers) + '</b><span>Workers</span></div>' +
+        '<div class="sg"><b>' + smartNum(tt.pages) + '</b><span>Pages</span></div>' +
+        '<div class="sg"><b>' + smartNum(kvR) + '</b><span>KV 读取</span></div>' +
+        '<div class="sg"><b>' + smartNum(d1R) + '</b><span>D1 行读取</span></div>' +
+      '</div>';
   }
 
-  var heroCard;
+  var hero;
   if (hasFree && hasPaid){
-    heroCard = '<div class="hero-card">' +
-      heroSection('免费账号 · Workers/Pages 请求使用情况（今日）', freeT, 'day', defaultOpen, 'free') +
-      '<div class="hero-sep"></div>' +
-      heroSection('付费账号 · Workers/Pages 请求使用情况（本月）', paidT, 'month', defaultOpen, 'paid') +
+    hero = '<div class="stat">' +
+      heroBlock('免费账号 · 今日请求', freeT.count + ' 个免费账号', freeT, 'free') +
+      '<div class="stat-sep"></div>' +
+      heroBlock('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT, 'paid') +
     '</div>';
   } else if (hasPaid){
-    heroCard = '<div class="hero-card">' +
-      heroSection('Workers/Pages 请求使用情况（本月）', paidT, 'month', true, 'paid') + '</div>';
+    hero = '<div class="stat">' +
+      heroBlock('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT, 'paid') + '</div>';
   } else {
-    var src = freeT.count ? freeT : { total: t.total || 0, max: t.max || 0, workers: t.workers || 0, pages: t.pages || 0, count: accounts.length, resources: res };
-    heroCard = '<div class="hero-card">' +
-      heroSection('Workers/Pages 请求使用情况', src, 'day', true, 'free') + '</div>';
+    var src = freeT.count ? freeT
+      : { total: t.total || 0, max: t.max || 0, workers: t.workers || 0, pages: t.pages || 0, count: accounts.length, resources: res };
+    hero = '<div class="stat">' + heroBlock('今日请求总量', '', src, 'free') + '</div>';
   }
 
   function mini(label, sub, used, limit){
@@ -769,16 +694,10 @@ function renderKpis(d){
   var r2res = (hasFree ? freeT.resources : paidT.resources) || resTemplate();
   var r2 = r2res.r2 || {};
 
-  var box = document.getElementById('overview');
-  box.innerHTML =
-    '<div class="hero-card-wrap">' + heroCard + '</div>' +
-    '<div class="stats mini-row">' + accStat + mini('R2 Class A', '本月', r2.classA, r2.classALimit) + '</div>';
-
-  startResetTimer();
+  document.getElementById('overview').innerHTML =
+    '<div class="stats">' + hero + accStat + mini('R2 Class A', '本月', r2.classA, r2.classALimit) + '</div>';
 }
 
-
-/* ---------------- 账号卡 ---------------- */
 function renderAccount(a){
   var res = a.resources || emptyRes();
   var kv = res.kv || {}, d1 = res.d1 || {}, r2 = res.r2 || {};
@@ -1003,15 +922,16 @@ function toast(msg){
 
 /* ---------- 总请求主卡：四个数据格 收起 / 展开 ---------- */
 function toggleHeroGrid(key){
-  var body = document.getElementById('heroGrid-' + key);
+  var grid = document.getElementById('heroGrid-' + key);
   var btn = document.getElementById('heroBtn-' + key);
-  if (!body) return;
-  var show = body.classList.contains('hidden');
-  body.classList.toggle('hidden', !show);
+  if (!grid) return;
+  var show = grid.classList.contains('hidden');
+  grid.classList.toggle('hidden', !show);
   if (btn){
     btn.classList.toggle('open', show);
     btn.setAttribute('aria-expanded', show ? 'true' : 'false');
-    btn.title = show ? '收起' : '展开';
+    var t = btn.querySelector('span');
+    if (t) t.textContent = show ? '收起详情' : '展开详情';
   }
 }
 

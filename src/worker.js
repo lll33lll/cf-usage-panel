@@ -326,7 +326,7 @@ const 免费额度 = {
     r2StorageBytes: 10 * 1024 * 1024 * 1024
 };
 
-const 默认单账号查询间隔毫秒 = 20 * 60 * 1000;
+const 默认单账号查询间隔毫秒 = 10 * 60 * 1000;
 const 默认每轮最多外部子请求数 = 50;
 
 const R2_CLASS_A_ACTIONS = new Set([

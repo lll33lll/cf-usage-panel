@@ -1,0 +1,36 @@
+name: sync
+
+# 一次性工作流：同步项目文件与截图（完成后本文件会被删除）
+on:
+  push:
+    paths:
+      - '.github/workflows/sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download and verify
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/p.tar.gz \
+            'https://tmp-pl.abc1221.ccwu.cc/f/project3.tar.gz'
+          echo "96db4d05ef87784fbebb546a62e05f46d88b07bf3c5b4dd68ea788b8139b1d93  /tmp/p.tar.gz" | sha256sum -c -
+          tar xzf /tmp/p.tar.gz -C .
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "feat: 免费/付费套餐自适应（额度、统计周期、概览分组、徽章）"
+          git push

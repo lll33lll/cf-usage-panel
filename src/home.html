@@ -176,7 +176,8 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
 .rank-row{display:flex;flex-direction:column;gap:.375rem;min-width:0}
 .rank-top{display:flex;align-items:baseline;justify-content:space-between;gap:.625rem}
 .rank-name{font-size:.75rem;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.rank-val{font-size:.8125rem;font-weight:700;flex:none}
+.rank-val{font-size:.8125rem;font-weight:700;flex:none;white-space:nowrap}
+.rank-val small{font-weight:400;opacity:.5;font-size:.6875rem}
 .rank-bar{height:.5rem;border-radius:var(--rounded-box);background:var(--b3);overflow:hidden}
 .rank-bar>i{display:block;height:100%;border-radius:var(--rounded-box);
   background:var(--cf);transition:width .7s cubic-bezier(.22,1,.36,1)}
@@ -892,7 +893,8 @@ function drawTrend(){
   var maxV = 0;
   for (i = 0; i < data.length; i++) maxV = Math.max(maxV, data[i].v);
   var top = niceMax(maxV);
-  function X(i){ return padL + iw * i / 23; }
+  function X(i){ return padL + iw * (i + 0.5) / 24; }   // 数据点：槽位中心
+  function XB(k){ return padL + iw * k / 24; }           // 刻度：槽位边界（0=08:00, 24=次日08:00）
   function Y(v){ return padT + ih * (1 - Math.min(Number(v) || 0, top) / top); }
 
   var line = '';
@@ -908,15 +910,15 @@ function drawTrend(){
     ticks += '<text x="' + (padL - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end">' +
              compact(top * (1 - g / 4)) + '</text>';
   }
-  for (i = 0; i < 24; i += 4){
-    ticks += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' +
+  for (i = 0; i <= 24; i += 4){
+    ticks += '<text x="' + XB(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' +
              pad2(bjHourOf(win.start + i * 3600000)) + ':00</text>';
   }
 
   var nowIdx = Math.floor((nowMs - win.start) / 3600000);
   var nowMark = '';
   if (nowIdx >= 0 && nowIdx <= 23){
-    var nx = X(nowIdx).toFixed(1);
+    var nx = (padL + iw * ((nowMs - win.start) / 3600000) / 24).toFixed(1);
     nowMark = '<line class="now-line" x1="' + nx + '" y1="' + padT + '" x2="' + nx +
               '" y2="' + (padT + ih) + '"/>' +
               '<text class="now-label" x="' + nx + '" y="' + (padT - 6) + '" text-anchor="middle">现在</text>';
@@ -952,7 +954,7 @@ function drawTrend(){
   function moveTo(clientX){
     var r = hit.getBoundingClientRect();
     if (!r.width) return;
-    var idx = Math.round(((clientX - r.left) / r.width) * 23);
+    var idx = Math.floor(((clientX - r.left) / r.width) * 24);
     idx = Math.max(0, Math.min(data.length - 1, idx));
     var px = X(idx), py = Y(data[idx].v);
     var ln = hov.querySelector('.hover-line');
@@ -1011,7 +1013,8 @@ function renderRank(accounts){
     html += '<div class="rank-row">' +
       '<div class="rank-top">' +
         '<span class="rank-name" title="' + esc(displayName(a)) + '">' + esc(displayName(a)) + '</span>' +
-        '<span class="rank-val">' + num(a.total) + '</span>' +
+        '<span class="rank-val">' + num(a.total) +
+          '<small> / ' + num(a.max || 100000) + '</small></span>' +
       '</div>' +
       '<div class="rank-bar"><i style="width:' + w.toFixed(1) + '%;' +
         (a.ok ? '' : 'background:var(--er)') + '"></i></div>' +

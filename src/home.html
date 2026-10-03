@@ -825,7 +825,8 @@ function toggleAccList(force){
 function initAccList(){
   var saved = null;
   try { saved = localStorage.getItem('lcup-acccollapsed'); } catch(e){}
-  if (saved === '1') toggleAccList(true);
+  // 默认收起；只有用户手动展开过（存了 '0'）才保持展开
+  if (saved !== '0') toggleAccList(true);
 }
 
 async function load(silent, force){

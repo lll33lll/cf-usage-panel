@@ -40,15 +40,21 @@ const documentStub = {
   querySelector(){ return null; },
   querySelectorAll(){ return []; }
 };
-const now = Date.now();
-// 按北京业务日窗口（08:00 → 次日 08:00）生成，与前端 trendWindow() 保持一致
+// 把"当前时刻"固定在业务日第 13 小时（北京 21:00），让测试与截图结果稳定、不随运行时间变化
 const BJ = 8 * 3600000;
-const _bd = new Date(now + BJ);
+const _realNow = Date.now();
+const _bd = new Date(_realNow + BJ);
 let winStart = Date.UTC(_bd.getUTCFullYear(), _bd.getUTCMonth(), _bd.getUTCDate(), 8) - BJ;
 if (_bd.getUTCHours() < 8) winStart -= 86400000;
+const now = winStart + 13 * 3600000;
+const RealDate = Date;
+function MockDate(...a){ return a.length ? new RealDate(...a) : new RealDate(now); }
+MockDate.now = () => now;
+MockDate.UTC = RealDate.UTC;
+MockDate.parse = RealDate.parse;
+MockDate.prototype = RealDate.prototype;
 const TREND = [];
-const maxIdx = Math.max(4, Math.min(Math.floor((now - winStart) / 3600000), 23));
-for (let i = 0; i <= maxIdx; i++) TREND.push({ t: winStart + i * 3600000, v: Math.round(200 + 900 * Math.abs(Math.sin(i / 3))) });
+for (let i = 0; i <= 13; i++) TREND.push({ t: winStart + i * 3600000, v: Math.round(200 + 900 * Math.abs(Math.sin(i / 3))) });
 const payload = {
   success: true, msg: '✅ 成功更新免费额度使用数据（本次刷新 2 个账号）', UpdateTime: now - 90000,
   totals: { workers: 12345, pages: 11111, total: 23456, max: 200000, trend: TREND,
@@ -66,7 +72,7 @@ const payload = {
   ]
 };
 const sandbox = {
-  console, Date, Math, Number, String, Array, Object, JSON, RegExp, isNaN, parseInt, parseFloat,
+  console, Date: MockDate, Math, Number, String, Array, Object, JSON, RegExp, isNaN, parseInt, parseFloat,
   document: documentStub,
   localStorage: { _d:{}, getItem(k){ return this._d[k] ?? null; }, setItem(k,v){ this._d[k]=v; } },
   window: { matchMedia: () => ({ matches: false }) },
@@ -88,6 +94,9 @@ sandbox.globalThis = sandbox;
   const meta = elements['accMeta'] ? elements['accMeta'].textContent : '';
   fs.writeFileSync(path.join(os.tmpdir(), 'render-overview.html'), overview);
   fs.writeFileSync(path.join(os.tmpdir(), 'render-accounts.html'), accList);
+  fs.writeFileSync(path.join(os.tmpdir(), 'render-rank.html'), (elements['rankBox'] || {}).innerHTML || '');
+  fs.writeFileSync(path.join(os.tmpdir(), 'render-trend.html'), (elements['trendBox'] || {}).innerHTML || '');
+  fs.writeFileSync(path.join(os.tmpdir(), 'render-tabs.html'), (elements['trendTabs'] || {}).innerHTML || '');
   console.log('overview len', overview.length, '| accounts len', accList.length, '| meta:', meta);
   console.log('statusText:', elements['statusText'] && elements['statusText'].textContent);
   const cnt = s => (accList.match(new RegExp(s, 'g')) || []).length;

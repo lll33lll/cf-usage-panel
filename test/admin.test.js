@@ -70,6 +70,7 @@ sandbox.globalThis = sandbox;
   console.log('table snippet:', tb.slice(0, 260).replace(/\n/g,' '));
   vm.runInContext('toggleAnon()', sandbox);
   const anonTb = (elements['accBody'] || {}).innerHTML || '';
+  fs.writeFileSync(path.join(os.tmpdir(), 'admin-table-anon.html'), anonTb);
   console.log('admin anon -> 账户 A:', anonTb.includes('账户 A'), '| leaks real name:', anonTb.includes('@example.com'));
   vm.runInContext('toggleAnon()', sandbox);
   // CSS 覆盖检查

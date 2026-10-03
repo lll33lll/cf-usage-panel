@@ -255,9 +255,10 @@ body{
 
 
 @media(max-width:1024px){
-  .stats{grid-template-columns:minmax(0,1fr)}
-  .stat{border-left:none;border-top:1px solid var(--b3)}
-  .stat:first-child{border-top:none}
+  /* 平板/手机：两列网格 + 主卡跨两列（1px 间隙当分隔线） */
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--b3)}
+  .stats>.stat{background:var(--b1);border:none;min-width:0}
+  .stats>.stat:first-child{grid-column:1/-1}
   .stat-value{font-size:1.875rem}
   .skel-row{grid-template-columns:minmax(0,1fr)}
 }
@@ -267,10 +268,21 @@ body{
   .brand-title{font-size:1rem}
   .hide-sm{display:none}
   .wrap{padding:1.25rem .75rem 3rem}
-  .card-body{padding:1.25rem}
-  .stat{padding:1rem 1.25rem}
-  .stat-value{font-size:1.75rem}
-  .table th,.table td{padding:.75rem .625rem}
+  .card-body{padding:1.125rem}
+  .stat{padding:1rem 1.125rem;gap:.25rem}
+  .stat-value{font-size:1.625rem}
+  .stat-title{font-size:.75rem}
+  .table th,.table td{padding:.625rem .5rem;font-size:.8125rem}
+  .t-name{font-size:.875rem;gap:.375rem;flex-wrap:wrap}
+  .t-num{font-size:.875rem;white-space:nowrap}
+  .t-num small{font-size:.625rem;opacity:.65}
+  .t-actions{gap:.125rem}
+  .icon-btn{width:2rem;height:2rem}
+  .sec-head{margin:1.75rem 0 .75rem}
+  .sec-head h2{font-size:1.125rem}
+  .modal-box{padding:1.25rem;margin:.75rem}
+  .radio-row{gap:.375rem}
+  .radio-opt{font-size:.8125rem;padding:.4375rem .625rem}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms!important;transition-duration:.001ms!important}

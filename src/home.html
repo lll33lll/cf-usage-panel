@@ -155,7 +155,7 @@ body{
   text-align:center;padding:1rem;line-height:1.7}
 svg.chart{display:block;width:100%}
 svg.chart text{font-size:.6875rem;fill:var(--bc);opacity:.5}
-@media(max-width:560px){.card-body{padding:1.125rem}svg.chart text{font-size:.625rem}}
+@media(max-width:560px){.card-body{padding:1rem}svg.chart text{font-size:.625rem}}
 svg.chart .grid-line{stroke:var(--b3);stroke-width:1}
 svg.chart .area{fill:url(#gTrend)}
 svg.chart .line{fill:none;stroke:var(--cf);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
@@ -200,6 +200,7 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
   background:var(--b1);border-radius:var(--rounded-box);
   box-shadow:var(--shadow);overflow:hidden;
 }
+.stats.cols-6{grid-template-columns:2fr repeat(5,minmax(0,1fr))}
 .stat{
   padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.375rem;
   border-left:1px solid var(--b3);min-width:0;
@@ -341,10 +342,13 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
 
 /* ============ 响应式 ============ */
 @media(max-width:1024px){
-  .stats{grid-template-columns:minmax(0,1fr)}
-  .stat{border-left:none;border-top:1px solid var(--b3)}
-  .stat:first-child{border-top:none}
+  /* 平板/手机：两列网格 + 主卡跨两列（用 1px 间隙当分隔线） */
+  .stats,
+  .stats.cols-6{grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--b3)}
+  .stats>.stat{background:var(--b1);border:none;min-width:0}
+  .stats>.stat:first-child{grid-column:1/-1}
   .stat-value{font-size:1.875rem}
+  .stat{padding:1.125rem 1.25rem}
 }
 @media(max-width:640px){
   .navbar{min-height:3.5rem;padding:.5rem .75rem}
@@ -352,10 +356,25 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
   .brand-title{font-size:1rem}
   .hide-sm{display:none}
   .wrap{padding:1.25rem .75rem 3rem}
-  .card-body{padding:1.25rem}
-  .grid{gap:1rem;grid-template-columns:1fr}
-  .stat{padding:1rem 1.25rem}
-  .stat-value{font-size:1.75rem}
+  .card-body{padding:1.125rem}
+  .grid{gap:1rem;grid-template-columns:minmax(0,1fr)}
+  .stat{padding:1rem 1.125rem;gap:.25rem}
+  .stat-value{font-size:1.625rem}
+  .stat-value .unit{font-size:.8125rem}
+  .stat-title{font-size:.75rem}
+  /* 卡片头部：说明文字换到第二行，别跟标题挤 */
+  .card-head{flex-wrap:wrap;gap:.375rem}
+  .chart-sub{font-size:.6875rem;flex-basis:100%}
+  /* 账号切换胶囊：允许换行，不横向溢出 */
+  .trend-tabs{flex-wrap:wrap;overflow:visible}
+  /* 卡片里的指标分栏在窄屏改成单列 */
+  .res-group{grid-template-columns:2.25rem minmax(0,1fr);gap:.625rem}
+  .metric-top{font-size:.6875rem}
+  .metric-top .mv b{font-size:.75rem}
+  .req-split{gap:.5rem}
+  .req-top .num{font-size:1.375rem}
+  .sec-head{margin:1.75rem 0 .75rem}
+  .sec-head h2{font-size:1.125rem}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation-duration:.001ms!important;transition-duration:.001ms!important}
@@ -641,7 +660,7 @@ function renderKpis(d){
   var box = document.getElementById('overview');
   box.innerHTML = '<div class="stats">' + cells.join('') + '</div>';
   var statsEl = box.querySelector('.stats');
-  if (statsEl) statsEl.style.gridTemplateColumns = '2fr repeat(' + (cells.length - 1) + ',minmax(0,1fr))';
+  if (statsEl) statsEl.classList.toggle('cols-6', cells.length > 5);
 }
 
 /* ---------------- 账号卡 ---------------- */

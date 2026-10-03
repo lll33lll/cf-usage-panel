@@ -202,6 +202,23 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
 }
 .stats.cols-6{grid-template-columns:2fr repeat(5,minmax(0,1fr))}
 .stat-sep{height:1px;background:var(--b3);margin:.5rem 0}
+/* 主卡变高时，右侧小格内容垂直居中，别悬在顶上 */
+.stats>.stat{justify-content:center}
+.stats>.stat:first-child{justify-content:flex-start}
+/* 主卡里的四个数据格 */
+.stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem}
+.stat-grid.hidden{display:none}
+.sg{background:var(--b2);border-radius:.5rem;padding:.5rem .625rem;
+  display:flex;flex-direction:column;gap:.125rem;min-width:0}
+.sg b{font-size:.9375rem;font-weight:700;letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg span{font-size:.6875rem;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hero-toggle{display:flex;align-items:center;gap:.25rem;font-size:.75rem;opacity:.55;
+  background:none;border:none;padding:.125rem 0;cursor:pointer;color:inherit;
+  align-self:flex-start;font-family:inherit}
+.hero-toggle:hover{opacity:1}
+.hero-toggle svg{width:.75rem;height:.75rem;transition:transform .2s ease}
+.hero-toggle.open svg{transform:rotate(180deg)}
 .stat{
   padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.375rem;
   border-left:1px solid var(--b3);min-width:0;
@@ -369,6 +386,7 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
   /* 账号切换胶囊：允许换行，不横向溢出 */
   .trend-tabs{flex-wrap:wrap;overflow:visible}
   /* 卡片里的指标分栏在窄屏改成单列 */
+  .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .res-group{grid-template-columns:2.25rem minmax(0,1fr);gap:.625rem}
   .metric-top{font-size:.6875rem}
   .metric-top .mv b{font-size:.75rem}
@@ -603,27 +621,39 @@ function renderKpis(d){
   var paidT = sumByPlan(accounts, true);
   var hasFree = freeT.count > 0, hasPaid = paidT.count > 0;
 
-  function heroBlock(label, sub, tt, withBar){
+  function heroBlock(label, sub, tt, key){
     var mx = tt.max || (tt.count ? tt.count * MAX_REQ : MAX_REQ);
     var pp = pct(tt.total, mx);
+    var res = tt.resources || resTemplate();
+    var kvR = (res.kv || {}).reads || 0;
+    var d1R = (res.d1 || {}).rowsRead || 0;
+    // 混合模式（两段都有）默认收起，单模式默认展开
+    var open = !(hasFree && hasPaid);
     return '<div class="stat-title"><span>' + esc(label) + '</span><span>' + pp.toFixed(1) + '%</span></div>' +
       '<div class="stat-value">' + num(tt.total) + '<span class="unit">/ ' + num(mx) + '</span></div>' +
       barHTML(tt.total, mx, '', true) +
-      '<div class="stat-split">' +
-        '<div class="sp"><b>' + num(tt.workers) + '</b><span>Workers</span></div>' +
-        '<div class="sp"><b>' + num(tt.pages) + '</b><span>Pages</span></div>' +
-      '</div>' +
-      (sub ? '<div class="stat-desc"><em>' + esc(sub) + '</em></div>' : '');
+      (sub ? '<div class="stat-desc"><em>' + esc(sub) + '</em></div>' : '') +
+      '<button class="hero-toggle' + (open ? ' open' : '') + '" id="heroBtn-' + key + '"' +
+        ' aria-expanded="' + (open ? 'true' : 'false') + '" onclick="toggleHeroGrid(\'' + key + '\')">' +
+        '<span>' + (open ? '收起详情' : '展开详情') + '</span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6"></path></svg>' +
+      '</button>' +
+      '<div class="stat-grid' + (open ? '' : ' hidden') + '" id="heroGrid-' + key + '">' +
+        '<div class="sg"><b>' + num(tt.workers) + '</b><span>Workers</span></div>' +
+        '<div class="sg"><b>' + num(tt.pages) + '</b><span>Pages</span></div>' +
+        '<div class="sg"><b>' + num(kvR) + '</b><span>KV 读取</span></div>' +
+        '<div class="sg"><b>' + num(d1R) + '</b><span>D1 行读取</span></div>' +
+      '</div>';
   }
   function heroHTML(label, sub, tt, extra){
-    return '<div class="stat">' + heroBlock(label, sub, tt) + (extra || '') + '</div>';
+    return '<div class="stat">' + heroBlock(label, sub, tt, 'free') + (extra || '') + '</div>';
   }
 
   var hero;
   if (hasFree && hasPaid){
     // 混合：主卡上半是免费账号（今日），下半是付费账号（本月）
     hero = heroHTML('免费账号 · 今日请求', freeT.count + ' 个免费账号', freeT,
-      '<div class="stat-sep"></div>' + heroBlock('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT));
+      '<div class="stat-sep"></div>' + heroBlock('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT, 'paid'));
   } else if (hasPaid){
     hero = heroHTML('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT);
   } else {
@@ -654,10 +684,7 @@ function renderKpis(d){
   var mkv = mainRes.kv || {}, md1 = mainRes.d1 || {}, mr2 = mainRes.r2 || {};
   var dayLabel = hasFree ? '今日' : '本月';
 
-  var cells = [hero, accStat];
-  cells.push(mini('KV 读取', dayLabel, mkv.reads, mkv.readsLimit));
-  cells.push(mini('D1 行读取', dayLabel, md1.rowsRead, md1.rowsReadLimit));
-  cells.push(mini('R2 Class A', '本月', mr2.classA, mr2.classALimit));
+  var cells = [hero, accStat, mini('R2 Class A', '本月', mr2.classA, mr2.classALimit)];
 
   var box = document.getElementById('overview');
   box.innerHTML = '<div class="stats">' + cells.join('') + '</div>';
@@ -890,6 +917,21 @@ function toast(msg){
     el.classList.remove('on');
     setTimeout(function(){ el.remove(); }, 320);
   }, 3200);
+}
+
+/* ---------- 总请求主卡：四个数据格 收起 / 展开 ---------- */
+function toggleHeroGrid(key){
+  var grid = document.getElementById('heroGrid-' + key);
+  var btn = document.getElementById('heroBtn-' + key);
+  if (!grid) return;
+  var show = grid.classList.contains('hidden');
+  grid.classList.toggle('hidden', !show);
+  if (btn){
+    btn.classList.toggle('open', show);
+    btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    var t = btn.querySelector('span');
+    if (t) t.textContent = show ? '收起详情' : '展开详情';
+  }
 }
 
 /* ---------- 账号明细 收起 / 展开 ---------- */

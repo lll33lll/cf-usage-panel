@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理面板 · Cloudflare 用量</title>
+<link rel="icon" href="https://cf-assets.www.cloudflare.com/dzlvafdwdttg/5uhbWfhjepEoUiM9phzhgJ/9658369030266cde9e35a3c5d4e4beb2/cloud-upload.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#570df8;  --pc:#ffffff;
+  --s:#f000b8;  --sc:#ffffff;
+  --a:#37cdbe;  --ac:#163835;
+  --n:#3d4451;  --nc:#ffffff;
+  --b1:#ffffff; --b2:#f2f2f2; --b3:#e5e6e6;
+  --bc:#1f2937;
+  --in:#3abff8; --su:#36d399; --wa:#fbbd23; --er:#f87272;
+  --rounded-box:1rem; --rounded-btn:.5rem; --rounded-badge:1.9rem;
+  --shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);
+}
+html[data-theme="dark"]{
+  --p:#661AE6;  --pc:#ffffff;
+  --s:#D926AA;  --sc:#ffffff;
+  --a:#1FB2A5;  --ac:#ffffff;
+  --n:#2a323c;  --nc:#A6ADBB;
+  --b1:#1d232a; --b2:#191e24; --b3:#15191e;
+  --bc:#A6ADBB;
+  --shadow:0 20px 25px -5px rgba(0,0,0,.3),0 8px 10px -6px rgba(0,0,0,.3);
+}
+body{
+  font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',
+    'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  background:var(--b2);color:var(--bc);
+  min-height:100vh;font-size:1rem;line-height:1.5;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+::selection{background:color-mix(in srgb,var(--p) 30%,transparent)}
+
+/* navbar */
+.navbar{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  min-height:4rem;padding:.5rem 1rem;
+  background:var(--b1);box-shadow:var(--shadow);
+}
+.navbar-start,.navbar-end{display:flex;align-items:center;gap:.5rem;min-width:0}
+.brand{display:flex;align-items:center;gap:.75rem;min-width:0;text-decoration:none;color:inherit}
+.brand-mark{
+  width:2.5rem;height:2.5rem;flex:none;border-radius:var(--rounded-btn);
+  display:grid;place-items:center;background:var(--p);color:var(--pc);
+}
+.brand-mark svg{width:1.5rem;height:1.5rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.brand-text{display:flex;flex-direction:column;min-width:0}
+.brand-title{font-size:1.125rem;font-weight:600;line-height:1.25}
+.brand-sub{font-size:.75rem;opacity:.6;line-height:1.2}
+
+/* badge */
+.badge{
+  display:inline-flex;align-items:center;gap:.375rem;height:1.5rem;
+  padding:0 .625rem;border-radius:var(--rounded-badge);
+  font-size:.75rem;font-weight:500;white-space:nowrap;
+  border:1px solid transparent;background:var(--b2);color:var(--bc);
+}
+.badge .dot{width:.375rem;height:.375rem;border-radius:999px;background:currentColor;flex:none}
+.badge-ghost{background:var(--b2);border-color:var(--b3);opacity:.85}
+.badge-success{background:var(--su);color:#062b1f;border-color:var(--su)}
+.badge-error{background:var(--er);color:#3b0a0a;border-color:var(--er)}
+.badge-warning{background:var(--wa);color:#3d2c00;border-color:var(--wa)}
+
+/* btn */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  height:2.5rem;padding:0 1rem;border-radius:var(--rounded-btn);
+  border:1px solid var(--b3);background:var(--b1);color:var(--bc);
+  font-size:.875rem;font-weight:500;font-family:inherit;line-height:1;
+  cursor:pointer;user-select:none;white-space:nowrap;text-decoration:none;
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease;
+}
+.btn:hover{background:var(--b2)}
+.btn:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+.btn-sm{height:2rem;padding:0 .75rem;font-size:.8125rem}
+.btn-square{width:2.5rem;height:2.5rem;padding:0}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-ghost:hover{background:var(--b2);border-color:transparent}
+.btn-primary{background:var(--p);border-color:var(--p);color:var(--pc)}
+.btn-primary:hover{background:color-mix(in srgb,var(--p) 88%,#000);border-color:color-mix(in srgb,var(--p) 88%,#000)}
+.btn-error{background:var(--er);border-color:var(--er);color:#3b0a0a}
+.btn-error:hover{background:color-mix(in srgb,var(--er) 88%,#000)}
+.btn svg{width:1rem;height:1rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.loading svg{animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* progress */
+.progress{height:.5rem;border-radius:var(--rounded-box);background:var(--b3);overflow:hidden;width:100%}
+.progress>i{display:block;height:100%;width:0;border-radius:var(--rounded-box);
+  background:var(--p);transition:width .7s cubic-bezier(.22,1,.36,1)}
+.progress-sm{height:.375rem}
+.progress-primary>i{background:var(--p)}
+.progress-success>i{background:var(--su)}
+.progress-warning>i{background:var(--wa)}
+.progress-error>i{background:var(--er)}
+
+/* layout */
+.wrap{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  margin:2.5rem 0 1rem;flex-wrap:wrap}
+.sec-head h2{font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
+.sec-head .meta{font-size:.8125rem;opacity:.6}
+
+/* stats */
+.stats{
+  display:grid;grid-template-columns:2fr repeat(4,minmax(0,1fr));
+  background:var(--b1);border-radius:var(--rounded-box);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.stat{padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.375rem;
+  border-left:1px solid var(--b3);min-width:0}
+.stat:first-child{border-left:none}
+.stat-title{font-size:.875rem;opacity:.6;font-weight:500;
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.stat-value{font-size:2.25rem;font-weight:800;line-height:1.05;letter-spacing:-.025em}
+.stat-value .unit{font-size:1rem;font-weight:500;opacity:.5;margin-left:.375rem;letter-spacing:0}
+.stat-desc{font-size:.75rem;opacity:.6;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.stat-desc em{font-style:normal;opacity:.75}
+.stat .progress{margin-top:.375rem}
+.stat-split{display:flex;gap:1.5rem;margin-top:.125rem}
+.stat-split .sp{display:flex;flex-direction:column;gap:0}
+.stat-split .sp b{font-size:1.0625rem;font-weight:700;line-height:1.2}
+.stat-split .sp span{font-size:.6875rem;opacity:.6}
+
+/* card */
+.card{background:var(--b1);border-radius:var(--rounded-box);box-shadow:var(--shadow);overflow:hidden}
+.card-body{padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+.card-title{font-size:1.0625rem;font-weight:600}
+
+/* table */
+.table-wrap{overflow-x:auto}
+.table{width:100%;border-collapse:collapse;font-size:.875rem}
+.table th{
+  text-align:left;padding:.75rem 1rem;font-size:.6875rem;font-weight:600;
+  letter-spacing:.04em;text-transform:uppercase;opacity:.55;
+  border-bottom:1px solid var(--b3);white-space:nowrap;
+}
+.table td{padding:.875rem 1rem;border-bottom:1px solid var(--b3);vertical-align:middle}
+.table tr:last-child td{border-bottom:none}
+.table tbody tr{transition:background-color .15s ease}
+.table tbody tr:hover{background:var(--b2)}
+.t-name{font-weight:600;font-size:.9375rem;display:flex;align-items:center;gap:.5rem}
+.t-acct{font-size:.6875rem;opacity:.5;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  margin-top:.125rem;white-space:nowrap}
+.t-num{font-weight:700;font-size:.9375rem}
+.t-num small{font-weight:500;font-size:.75rem;opacity:.45;margin-left:.125rem}
+.t-sub{font-size:.6875rem;opacity:.55}
+.t-actions{text-align:right;white-space:nowrap;width:4.5rem}
+.icon-btn{
+  width:2rem;height:2rem;border-radius:var(--rounded-btn);border:1px solid transparent;
+  background:transparent;color:var(--bc);opacity:.55;cursor:pointer;
+  display:inline-grid;place-items:center;transition:.15s ease;
+}
+.icon-btn:hover{opacity:1;background:var(--b2);border-color:var(--b3)}
+.icon-btn.danger:hover{color:var(--er);background:color-mix(in srgb,var(--er) 12%,transparent);
+  border-color:color-mix(in srgb,var(--er) 28%,transparent)}
+.icon-btn svg{width:1rem;height:1rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+
+/* empty */
+.empty{padding:3.5rem 1.5rem;text-align:center;display:flex;flex-direction:column;
+  align-items:center;gap:.75rem}
+.empty .ic{width:3rem;height:3rem;border-radius:var(--rounded-box);display:grid;
+  place-items:center;background:var(--b2)}
+.empty .ic svg{width:1.5rem;height:1.5rem;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.5}
+.empty h3{font-size:1.0625rem;font-weight:600}
+.empty p{font-size:.875rem;opacity:.6;max-width:24rem;line-height:1.6}
+
+.skel{background:var(--b1);border-radius:var(--rounded-box);box-shadow:var(--shadow);
+  position:relative;overflow:hidden}
+.skel::after{content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--bc) 8%,transparent),transparent);
+  transform:translateX(-100%);animation:shimmer 1.5s infinite}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.skel-stat{height:8.5rem}
+.skel-row{display:grid;gap:1.5rem;grid-template-columns:repeat(4,minmax(0,1fr))}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);
+  display:none;align-items:center;justify-content:center;padding:1rem;overflow-y:auto}
+.modal.modal-open{display:flex;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{
+  width:100%;max-width:26rem;background:var(--b1);border-radius:var(--rounded-box);
+  box-shadow:var(--shadow);padding:1.5rem;margin:auto;
+  animation:popIn .2s cubic-bezier(.22,1,.36,1);
+}
+@keyframes popIn{from{opacity:0;transform:translateY(.5rem) scale(.97)}to{opacity:1;transform:none}}
+.modal-box h3{font-size:1.125rem;font-weight:700}
+.modal-box .hint{font-size:.8125rem;opacity:.6;margin-top:.25rem;margin-bottom:1.25rem;line-height:1.6}
+.modal-actions{display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.5rem}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:.25rem;padding:.25rem;
+  background:var(--b2);border-radius:var(--rounded-btn);margin-bottom:1.25rem}
+.tab{
+  height:2rem;border:none;border-radius:calc(var(--rounded-btn) - 2px);
+  background:transparent;color:var(--bc);opacity:.6;cursor:pointer;
+  font-size:.8125rem;font-family:inherit;font-weight:500;
+  transition:.15s ease;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.tab:hover{opacity:.85}
+.tab.active{background:var(--b1);opacity:1;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.form-control{display:flex;flex-direction:column;gap:.375rem;margin-bottom:1rem}
+.form-control label{font-size:.8125rem;opacity:.7}
+.form-control .sub{font-size:.6875rem;opacity:.5;line-height:1.5}
+.input{
+  height:3rem;border-radius:var(--rounded-btn);border:1px solid var(--b3);
+  background:var(--b2);color:var(--bc);padding:0 1rem;font-size:.9375rem;
+  font-family:inherit;outline:none;width:100%;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.input:focus{border-color:var(--p);box-shadow:0 0 0 3px color-mix(in srgb,var(--p) 22%,transparent)}
+.alert-error{
+  font-size:.8125rem;color:var(--er);background:color-mix(in srgb,var(--er) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--er) 28%,transparent);
+  border-radius:var(--rounded-btn);padding:.625rem .875rem;margin-bottom:1rem;
+  line-height:1.5;word-break:break-word;
+}
+.alert-success{
+  font-size:.8125rem;color:#062b1f;background:var(--su);
+  border-radius:var(--rounded-btn);padding:.625rem .875rem;margin-bottom:1rem;
+  line-height:1.5;word-break:break-word;
+}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:1.5rem;transform:translate(-50%,.75rem);z-index:80;
+  max-width:calc(100vw - 2rem);padding:.75rem 1rem;border-radius:var(--rounded-box);
+  background:var(--n);color:var(--nc);font-size:.875rem;
+  box-shadow:var(--shadow);opacity:0;pointer-events:none;
+  transition:opacity .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+
+@media(max-width:1024px){
+  .stats{grid-template-columns:minmax(0,1fr)}
+  .stat{border-left:none;border-top:1px solid var(--b3)}
+  .stat:first-child{border-top:none}
+  .stat-value{font-size:1.875rem}
+  .skel-row{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:640px){
+  .navbar{min-height:3.5rem;padding:.5rem .75rem;gap:.5rem}
+  .brand-sub{display:none}
+  .brand-title{font-size:1rem}
+  .hide-sm{display:none}
+  .wrap{padding:1.25rem .75rem 3rem}
+  .card-body{padding:1.25rem}
+  .stat{padding:1rem 1.25rem}
+  .stat-value{font-size:1.75rem}
+  .table th,.table td{padding:.75rem .625rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="navbar-start">
+    <a class="brand" href="./">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6.5 6.5 0 0 0 5.3 11.2 3.9 3.9 0 0 0 6 19h11.5z"></path></svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">管理面板</div>
+        <div class="brand-sub">Cloudflare 用量面板</div>
+      </div>
+    </a>
+  </div>
+  <div class="navbar-end">
+    <button class="btn btn-sm btn-ghost" id="refreshBtn" onclick="refreshAll(true)">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 4v5h-5"></path></svg>
+      <span class="hide-sm">刷新数据</span>
+    </button>
+    <button class="btn btn-square btn-ghost" id="anonBtn" title="匿名显示账号名" onclick="toggleAnon()">
+      <svg id="iconEye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <svg id="iconEyeOff" viewBox="0 0 24 24" style="display:none"><path d="M3 3l18 18"></path><path d="M10.6 5.1A9.9 9.9 0 0 1 12 5c5 0 9 4.5 9 7a11 11 0 0 1-2.2 3.6M6.2 6.3A12.4 12.4 0 0 0 3 12c0 2.5 4 7 9 7a9.8 9.8 0 0 0 4-.9"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>
+    </button>
+    <button class="btn btn-square btn-ghost" title="切换主题" onclick="toggleTheme()">
+      <svg id="iconSun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      <svg id="iconMoon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+    </button>
+    <a class="btn btn-square btn-ghost" href="./" title="返回主页">
+      <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5.5 9.5V20h13V9.5"></path></svg>
+    </a>
+    <button class="btn btn-square btn-ghost" title="退出登录" onclick="logout()">
+      <svg viewBox="0 0 24 24"><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15"></path><path d="M10 8l-4 4 4 4M6 12h9"></path></svg>
+    </button>
+  </div>
+</div>
+
+<main class="wrap">
+  <section id="overview">
+    <div class="skel-row">
+      <div class="skel skel-stat"></div>
+      <div class="skel skel-stat"></div>
+      <div class="skel skel-stat"></div>
+      <div class="skel skel-stat"></div>
+    </div>
+  </section>
+
+  <div class="sec-head">
+    <h2>账号管理</h2>
+    <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+      <span class="meta" id="accMeta"></span>
+      <button class="btn btn-sm btn-primary" onclick="openAdd()">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg>
+        添加账号
+      </button>
+    </div>
+  </div>
+
+  <div class="card" id="accCard">
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>账号</th>
+            <th>今日请求</th>
+            <th>状态</th>
+            <th class="hide-sm">更新时间</th>
+            <th class="t-actions">操作</th>
+          </tr>
+        </thead>
+        <tbody id="accBody">
+          <tr><td colspan="5" style="padding:2rem;text-align:center;opacity:.5">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div class="modal" id="addModal">
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <h3>添加 Cloudflare 账号</h3>
+    <p class="hint">需要一个具备 <b>Account → Analytics → Read</b> 权限的 API Token，添加时会先校验一次</p>
+    <div id="addErr" class="alert-error" style="display:none"></div>
+    <div class="tabs">
+      <button class="tab active" id="tabToken" onclick="switchAuth('token')">Account ID + Token</button>
+      <button class="tab" id="tabKey" onclick="switchAuth('key')">邮箱 + 全局密钥</button>
+    </div>
+    <div class="form-control">
+      <label for="inName">账号名称</label>
+      <input class="input" id="inName" type="text" placeholder="例如：主账号（留空则用 Account ID）">
+    </div>
+    <div id="authToken">
+      <div class="form-control">
+        <label for="inAccountId">Account ID</label>
+        <input class="input" id="inAccountId" type="text" placeholder="32 位十六进制" autocomplete="off">
+      </div>
+      <div class="form-control">
+        <label for="inToken">API Token</label>
+        <input class="input" id="inToken" type="password" placeholder="Analytics Read Token" autocomplete="off">
+      </div>
+    </div>
+    <div id="authKey" style="display:none">
+      <div class="form-control">
+        <label for="inEmail">账号邮箱</label>
+        <input class="input" id="inEmail" type="email" placeholder="you@example.com" autocomplete="off">
+      </div>
+      <div class="form-control">
+        <label for="inKey">Global API Key</label>
+        <input class="input" id="inKey" type="password" placeholder="全局 API 密钥" autocomplete="off">
+        <span class="sub">全局密钥权限过大，建议优先用 API Token</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeAdd()">取消</button>
+      <button class="btn btn-primary" id="addBtn" onclick="submitAdd()">添加</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="confirmModal">
+  <div class="modal-box" role="dialog" aria-modal="true">
+    <h3 id="cfTitle">确认操作</h3>
+    <p class="hint" id="cfHint"></p>
+    <div class="modal-actions">
+      <button class="btn" id="cfCancel" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-error" id="cfOk" onclick="runConfirm()">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var state = { accounts: [], authMode: 'token', anon: false, nameMap: {} };
+
+/* ---------- 工具 ---------- */
+function esc(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function pct(used, limit){
+  used = Number(used) || 0; limit = Number(limit) || 0;
+  if (limit <= 0) return 0;
+  return Math.max(0, Math.min(used / limit * 100, 100));
+}
+function num(v){ return (Number(v) || 0).toLocaleString('en-US'); }
+function compact(v){
+  v = Number(v) || 0;
+  var a = Math.abs(v);
+  if (a >= 1e9) return (v / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (a >= 1e6) return (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (a >= 1e3) return (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(v);
+}
+function ago(ts){
+  ts = Number(ts) || 0;
+  if (!ts) return '从未更新';
+  var d = Date.now() - ts;
+  if (d < 0) d = 0;
+  var m = Math.floor(d / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return m + ' 分钟前';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + ' 小时前';
+  return Math.floor(h / 24) + ' 天前';
+}
+function fullTime(ts){
+  ts = Number(ts) || 0;
+  if (!ts) return '—';
+  var d = new Date(ts);
+  function p(n){ return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' +
+         p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+}
+function toneCls(p){ return p >= 85 ? 'progress-error' : (p >= 60 ? 'progress-warning' : 'progress-success'); }
+function emptyRes(){ return { d1:{}, kv:{}, r2:{} }; }
+
+/* ---------- 主题 ---------- */
+function applyTheme(light){
+  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+  document.getElementById('iconSun').style.display = light ? 'block' : 'none';
+  document.getElementById('iconMoon').style.display = light ? 'none' : 'block';
+}
+function toggleTheme(){
+  var light = document.documentElement.getAttribute('data-theme') !== 'light';
+  localStorage.setItem('theme', light ? 'light' : 'dark');
+  applyTheme(light);
+}
+(function initTheme(){
+  var forced = ((location.search || '').match(/[?&]theme=(dark|light)/) || [])[1];
+  if (forced){ applyTheme(forced === 'light'); return; }
+  var saved = localStorage.getItem('theme');
+  var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(saved ? saved === 'light' : !!sysLight);
+})();
+
+function toast(msg){
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(function(){ el.classList.add('on'); });
+  setTimeout(function(){
+    el.classList.remove('on');
+    setTimeout(function(){ el.remove(); }, 320);
+  }, 3200);
+}
+
+/* ---------- 概览 ---------- */
+function renderOverview(d){
+  var res = (d && d.resources) || emptyRes();
+  var kv = res.kv || {}, d1 = res.d1 || {}, r2 = res.r2 || {};
+  var total = d.total || 0, max = d.max || 100000;
+  var p = pct(total, max);
+  var n = state.accounts.length;
+  var bad = 0;
+  for (var i = 0; i < n; i++) if (!state.accounts[i].ok) bad++;
+
+  var hero =
+    '<div class="stat">' +
+      '<div class="stat-title"><span>今日请求总量</span><span>' + p.toFixed(1) + '%</span></div>' +
+      '<div class="stat-value">' + num(total) + '<span class="unit">/ ' + num(max) + '</span></div>' +
+      '<div class="progress progress-primary"><i style="width:' + p.toFixed(2) + '%"></i></div>' +
+      '<div class="stat-split">' +
+        '<div class="sp"><b>' + num(d.workers) + '</b><span>Workers</span></div>' +
+        '<div class="sp"><b>' + num(d.pages) + '</b><span>Pages</span></div>' +
+      '</div>' +
+    '</div>';
+
+  function mini(label, sub, used, limit){
+    var pp = pct(used, limit);
+    return '<div class="stat">' +
+      '<div class="stat-title"><span>' + esc(label) + '</span><span>' + esc(sub) + '</span></div>' +
+      '<div class="stat-value">' + num(used) + '</div>' +
+      '<div class="stat-desc"><em>上限 ' + compact(limit) + '</em><span>' + pp.toFixed(1) + '%</span></div>' +
+    '</div>';
+  }
+
+  var accStat =
+    '<div class="stat">' +
+      '<div class="stat-title"><span>监控账号</span></div>' +
+      '<div class="stat-value">' + n + '<span class="unit">个</span></div>' +
+      '<div class="stat-desc"><em>正常 ' + (n - bad) + ' 个</em>' +
+        (bad > 0 ? '<span style="color:var(--er)">异常 ' + bad + ' 个</span>' : '') +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('overview').innerHTML =
+    '<div class="stats">' + hero + accStat +
+      mini('KV 读取', '今日', kv.reads, kv.readsLimit) +
+      mini('D1 行读取', '今日', d1.rowsRead, d1.rowsReadLimit) +
+      mini('R2 Class A', '本月', r2.classA, r2.classALimit) +
+    '</div>';
+}
+
+/* ---------- 账号表 ---------- */
+function renderTable(accounts){
+  var body = document.getElementById('accBody');
+  var meta = document.getElementById('accMeta');
+  if (!accounts.length){
+    meta.textContent = '';
+    body.innerHTML = '<tr><td colspan="5">' +
+      '<div class="empty">' +
+        '<div class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></div>' +
+        '<h3>还没有添加账号</h3>' +
+        '<p>点击右上角「添加账号」，填入 Account ID 和一个具备 Analytics 读取权限的 API Token。</p>' +
+      '</div></td></tr>';
+    return;
+  }
+  meta.textContent = accounts.length + ' 个账号';
+  var html = '';
+  for (var i = 0; i < accounts.length; i++){
+    var a = accounts[i];
+    var used = a.total || 0, max = a.max || 100000;
+    var pp = pct(used, max);
+    html += '<tr>' +
+      '<td>' +
+        '<div class="t-name">' + esc(displayName(a)) +
+          '<span class="badge badge-ghost">#' + esc(a.id) + '</span>' +
+        '</div>' +
+        '<div class="t-acct">' + esc(displayAcct(a)) + '</div>' +
+      '</td>' +
+      '<td>' +
+        '<div class="t-num">' + num(used) + '<small>/ ' + num(max) + '</small></div>' +
+        '<div class="progress progress-sm ' + toneCls(pp) + '" style="margin-top:.4rem;max-width:10rem">' +
+          '<i style="width:' + pp.toFixed(2) + '%"></i></div>' +
+      '</td>' +
+      '<td>' + (a.ok
+        ? '<span class="badge badge-success"><span class="dot"></span>正常</span>'
+        : '<span class="badge badge-error"><span class="dot"></span>异常</span>') + '</td>' +
+      '<td class="hide-sm"><span class="t-sub" title="' + fullTime(a.updateTime) + '">' +
+        esc(ago(a.updateTime)) + '</span></td>' +
+      '<td class="t-actions">' +
+        '<button class="icon-btn danger" title="删除账号" onclick="askDel(' +
+          esc(JSON.stringify(a.id)) + ',' + esc(JSON.stringify(String(displayName(a)))) + ')">' +
+          '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"></path>' +
+          '<path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"></path>' +
+          '<path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"></path></svg>' +
+        '</button>' +
+      '</td>' +
+    '</tr>';
+  }
+  body.innerHTML = html;
+}
+
+/* ---------- 匿名显示（账户 A / B / C） ---------- */
+function letterFor(i){
+  var s = '', n = (Number(i) || 0) + 1;
+  while (n > 0){
+    var r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+function displayName(a){
+  if (!state.anon) return (a && a.name) || '未命名';
+  var idx = state.nameMap[a.id];
+  return '账户 ' + letterFor(typeof idx === 'number' ? idx : 0);
+}
+function displayAcct(a){
+  if (state.anon) return '••••••••••••';
+  return (a && a.accountId) || '—';
+}
+function applyAnonIcon(){
+  var on = document.getElementById('iconEye');
+  var off = document.getElementById('iconEyeOff');
+  var btn = document.getElementById('anonBtn');
+  if (on) on.style.display = state.anon ? 'none' : 'block';
+  if (off) off.style.display = state.anon ? 'block' : 'none';
+  if (btn) btn.title = state.anon ? '显示真实账号名' : '匿名显示账号名（账户 A/B/C）';
+}
+function toggleAnon(){
+  state.anon = !state.anon;
+  try { localStorage.setItem('lcup-anon', state.anon ? '1' : '0'); } catch(e){}
+  applyAnonIcon();
+  renderTable(state.accounts);
+}
+
+/* ---------- 数据 ---------- */
+async function load(force){
+  var btn = document.getElementById('refreshBtn');
+  if (force && btn) btn.classList.add('loading');
+  try{
+    var q = (force ? '?force=1&t=' : '?t=') + Date.now();
+    var r1 = await fetch('./admin/usage.json' + q, { cache: 'no-store' });
+    var usage = await r1.json();
+    var r2 = await fetch('./admin/config.json?t=' + Date.now(), { cache: 'no-store' });
+    var config = await r2.json();
+    state.accounts = (Array.isArray(config) ? config : []).map(function(item, i){
+      var u = item.Usage || {};
+      var w = Number(u.workers) || 0, pg = Number(u.pages) || 0;
+      return {
+        id: (item.ID === 0 || item.ID) ? item.ID : i,
+        name: item.Name || ('账号 ' + (i + 1)),
+        accountId: item.AccountID || item.Email || '',
+        updateTime: Number(item.UpdateTime || u.UpdateTime || 0) || 0,
+        ok: !!u.success,
+        msg: item.LastCheckError || u.msg || '',
+        workers: w, pages: pg, total: w + pg,
+        max: Number(u.max) || 100000
+      };
+    });
+    state.nameMap = {};
+    for (var k = 0; k < state.accounts.length; k++) state.nameMap[state.accounts[k].id] = k;
+    renderOverview(usage);
+    renderTable(state.accounts);
+    if (force) toast(usage.msg || '数据已刷新');
+  }catch(e){
+    toast('加载失败：' + (e.message || '未知错误'));
+  }finally{
+    if (btn) btn.classList.remove('loading');
+  }
+}
+function refreshAll(force){ load(force !== false); }
+
+/* ---------- 添加 ---------- */
+function showErr(msg){
+  var el = document.getElementById('addErr');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function openAdd(){
+  document.getElementById('addErr').style.display = 'none';
+  document.getElementById('addModal').classList.add('modal-open');
+  document.getElementById('inName').focus();
+}
+function closeAdd(){
+  document.getElementById('addModal').classList.remove('modal-open');
+  ['inName','inAccountId','inToken','inEmail','inKey'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+function switchAuth(mode){
+  state.authMode = mode;
+  document.getElementById('tabToken').classList.toggle('active', mode === 'token');
+  document.getElementById('tabKey').classList.toggle('active', mode === 'key');
+  document.getElementById('authToken').style.display = mode === 'token' ? '' : 'none';
+  document.getElementById('authKey').style.display = mode === 'key' ? '' : 'none';
+}
+async function submitAdd(){
+  var btn = document.getElementById('addBtn');
+  var err = document.getElementById('addErr');
+  err.style.display = 'none';
+  var name = document.getElementById('inName').value.trim();
+  var payload = {};
+  if (state.authMode === 'token'){
+    var aid = document.getElementById('inAccountId').value.trim();
+    var tok = document.getElementById('inToken').value.trim();
+    if (!aid || !tok) return showErr('请填写 Account ID 和 API Token');
+    payload.AccountID = aid;
+    payload.APIToken = tok;
+    payload.Name = name || (aid.length > 10 ? aid.slice(0, 8) + '…' : aid);
+  } else {
+    var em = document.getElementById('inEmail').value.trim();
+    var gk = document.getElementById('inKey').value.trim();
+    if (!em || !gk) return showErr('请填写邮箱和全局 API 密钥');
+    payload.Email = em;
+    payload.GlobalAPIKey = gk;
+    payload.Name = name || em;
+  }
+  btn.disabled = true; btn.textContent = '校验中…';
+  try{
+    var r = await fetch('./api/add', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var d = await r.json();
+    if (d.success){ closeAdd(); toast(d.msg || '添加成功'); load(true); }
+    else showErr(d.msg || '添加失败');
+  }catch(e){
+    showErr('网络错误：' + (e.message || '未知'));
+  }finally{
+    btn.disabled = false; btn.textContent = '添加';
+  }
+}
+
+/* ---------- 通用确认弹窗 ---------- */
+var pendingConfirm = null;
+function askConfirm(title, hint, okText, cb){
+  pendingConfirm = cb;
+  document.getElementById('cfTitle').textContent = title;
+  document.getElementById('cfHint').textContent = hint;
+  document.getElementById('cfOk').textContent = okText || '确定';
+  document.getElementById('confirmModal').classList.add('modal-open');
+}
+function closeConfirm(){
+  document.getElementById('confirmModal').classList.remove('modal-open');
+  pendingConfirm = null;
+}
+function runConfirm(){
+  var cb = pendingConfirm;
+  closeConfirm();
+  if (cb) cb();
+}
+
+/* ---------- 删除 ---------- */
+function askDel(id, name){
+  askConfirm('删除账号',
+    '确定要删除「' + name + '」吗？删除后需要重新添加才能恢复。',
+    '删除', function(){ doDel(id); });
+}
+async function doDel(id){
+  var btn = document.getElementById('cfOk');
+  btn.disabled = true; btn.textContent = '删除中…';
+  try{
+    var r = await fetch('./api/del', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ID: id })
+    });
+    var d = await r.json();
+    if (d.success){ toast(d.msg || '已删除'); load(true); }
+    else toast(d.msg || '删除失败');
+  }catch(e){
+    toast('网络错误：' + (e.message || '未知'));
+  }finally{
+    btn.disabled = false; btn.textContent = '删除';
+  }
+}
+
+/* ---------- 其他 ---------- */
+function logout(){
+  askConfirm('退出登录',
+    '确定要退出管理员登录吗？退出后需要重新输入密码才能进入管理面板。',
+    '退出登录', doLogout);
+}
+async function doLogout(){
+  try{ await fetch('./api/logout', { method: 'POST' }); }catch(e){}
+  location.href = './';
+}
+
+['addModal','confirmModal'].forEach(function(id){
+  var el = document.getElementById(id);
+  el.addEventListener('click', function(e){
+    if (e.target === this){ id === 'addModal' ? closeAdd() : closeConfirm(); }
+  });
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape'){ closeAdd(); closeConfirm(); }
+});
+document.getElementById('inToken').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') submitAdd();
+});
+
+(function loadAnon(){
+  var forced = ((location.search || '').match(/[?&]anon=(1|0)/) || [])[1];
+  if (forced){ state.anon = forced === '1'; return; }
+  try { state.anon = localStorage.getItem('lcup-anon') === '1'; } catch(e){ state.anon = false; }
+})();
+applyAnonIcon();
+load(false);
+setInterval(function(){ load(false); }, 5 * 60 * 1000);
+</script>
+</body>
+</html>

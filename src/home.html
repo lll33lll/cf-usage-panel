@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudflare 用量面板</title>
+<link rel="icon" href="https://cf-assets.www.cloudflare.com/dzlvafdwdttg/5uhbWfhjepEoUiM9phzhgJ/9658369030266cde9e35a3c5d4e4beb2/cloud-upload.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ============ daisyUI 语义色板 ============ */
+:root{
+  --p:#570df8;  --pc:#ffffff;
+  --s:#f000b8;  --sc:#ffffff;
+  --a:#37cdbe;  --ac:#163835;
+  --n:#3d4451;  --nc:#ffffff;
+  --b1:#ffffff; --b2:#f2f2f2; --b3:#e5e6e6;
+  --bc:#1f2937;
+  --in:#3abff8; --su:#36d399; --wa:#fbbd23; --er:#f87272;
+  --rounded-box:1rem;
+  --rounded-btn:.5rem;
+  --rounded-badge:1.9rem;
+  --border-btn:1px;
+  --shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);
+}
+html[data-theme="dark"]{
+  --p:#661AE6;  --pc:#ffffff;
+  --s:#D926AA;  --sc:#ffffff;
+  --a:#1FB2A5;  --ac:#ffffff;
+  --n:#2a323c;  --nc:#A6ADBB;
+  --b1:#1d232a; --b2:#191e24; --b3:#15191e;
+  --bc:#A6ADBB;
+  --shadow:0 20px 25px -5px rgba(0,0,0,.3),0 8px 10px -6px rgba(0,0,0,.3);
+}
+
+body{
+  font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',
+    'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  background:var(--b2);color:var(--bc);
+  min-height:100vh;font-size:1rem;line-height:1.5;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+}
+::selection{background:color-mix(in srgb,var(--p) 30%,transparent)}
+
+/* ============ navbar ============ */
+.navbar{
+  position:sticky;top:0;z-index:30;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  min-height:4rem;padding:.5rem 1rem;
+  background:var(--b1);box-shadow:var(--shadow);
+}
+.navbar-start,.navbar-end{display:flex;align-items:center;gap:.5rem;min-width:0}
+.brand{display:flex;align-items:center;gap:.75rem;min-width:0}
+.brand-mark{
+  width:2.5rem;height:2.5rem;flex:none;border-radius:var(--rounded-btn);
+  display:grid;place-items:center;background:var(--p);color:var(--pc);
+}
+.brand-mark svg{width:1.5rem;height:1.5rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.brand-text{display:flex;flex-direction:column;min-width:0}
+.brand-title{font-size:1.125rem;font-weight:600;line-height:1.25;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-sub{font-size:.75rem;opacity:.6;line-height:1.2}
+
+/* ============ badge ============ */
+.badge{
+  display:inline-flex;align-items:center;gap:.375rem;height:1.5rem;
+  padding:0 .625rem;border-radius:var(--rounded-badge);
+  font-size:.75rem;font-weight:500;white-space:nowrap;
+  border:1px solid transparent;background:var(--b2);color:var(--bc);
+}
+.badge .dot{width:.375rem;height:.375rem;border-radius:999px;background:currentColor;flex:none}
+.badge-ghost{background:var(--b2);border-color:var(--b3);opacity:.85}
+.badge-success{background:var(--su);color:#062b1f;border-color:var(--su)}
+.badge-error{background:var(--er);color:#3b0a0a;border-color:var(--er)}
+
+.badge-warning{background:var(--wa);color:#3d2c00;border-color:var(--wa)}
+.badge-primary{background:var(--p);color:var(--pc);border-color:var(--p)}
+.skel-row{display:grid;gap:1.5rem;grid-template-columns:repeat(4,minmax(0,1fr))}
+
+/* ============ btn ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  height:2.5rem;padding:0 1rem;border-radius:var(--rounded-btn);
+  border:var(--border-btn) solid var(--b3);background:var(--b1);color:var(--bc);
+  font-size:.875rem;font-weight:500;font-family:inherit;line-height:1;
+  cursor:pointer;user-select:none;white-space:nowrap;
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease;
+}
+.btn:hover{background:var(--b2);border-color:var(--b3)}
+.btn:focus-visible{outline:2px solid var(--p);outline-offset:2px}
+.btn-sm{height:2rem;padding:0 .75rem;font-size:.8125rem}
+.btn-square{width:2.5rem;height:2.5rem;padding:0}
+.btn-square.btn-sm{width:2rem;height:2rem}
+.btn-ghost{border-color:transparent;background:transparent}
+.btn-ghost:hover{background:var(--b2);border-color:transparent}
+.btn-primary{background:var(--p);border-color:var(--p);color:var(--pc)}
+.btn-primary:hover{background:color-mix(in srgb,var(--p) 88%,#000);border-color:color-mix(in srgb,var(--p) 88%,#000)}
+.btn svg{width:1rem;height:1rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.btn.loading svg{animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.icon-btn{
+  width:1.75rem;height:1.75rem;border-radius:var(--rounded-btn);border:1px solid transparent;
+  background:transparent;color:var(--bc);opacity:.35;cursor:pointer;flex:none;
+  display:inline-grid;place-items:center;transition:.15s ease;
+}
+.icon-btn:hover{opacity:1;background:var(--b2);border-color:var(--b3)}
+.icon-btn svg{width:.9375rem;height:.9375rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.acc-tools{display:flex;align-items:center;gap:.375rem;flex:none}
+.sec-actions{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+
+/* 趋势切换胶囊 */
+.trend-tabs{
+  display:flex;gap:.375rem;overflow-x:auto;padding-bottom:.25rem;
+  scrollbar-width:none;-ms-overflow-style:none;
+  -webkit-overflow-scrolling:touch;
+}
+.trend-tabs::-webkit-scrollbar{display:none}
+.trend-tab{
+  flex:none;height:1.75rem;padding:0 .75rem;border-radius:var(--rounded-badge);
+  border:1px solid var(--b3);background:transparent;color:var(--bc);opacity:.6;
+  font-size:.75rem;font-family:inherit;font-weight:500;cursor:pointer;white-space:nowrap;
+  max-width:9rem;overflow:hidden;text-overflow:ellipsis;
+  transition:background-color .15s ease,opacity .15s ease,color .15s ease;
+}
+.trend-tab:hover{opacity:.9;background:var(--b2)}
+.trend-tab.active{background:var(--p);border-color:var(--p);color:var(--pc);opacity:1;font-weight:600}
+.trend-tab.err{border-style:dashed}
+
+/* ============ progress ============ */
+.progress{
+  height:.5rem;border-radius:var(--rounded-box);background:var(--b3);
+  overflow:hidden;width:100%;
+}
+.progress>i{
+  display:block;height:100%;width:0;border-radius:var(--rounded-box);
+  background:var(--p);transition:width .7s cubic-bezier(.22,1,.36,1);
+}
+.progress-sm{height:.375rem}
+.progress-primary>i{background:var(--p)}
+.progress-success>i{background:var(--su)}
+.progress-warning>i{background:var(--wa)}
+.progress-error>i{background:var(--er)}
+
+/* ============ 图表 ============ */
+.charts{display:grid;gap:1.5rem;grid-template-columns:minmax(0,2fr) minmax(0,1fr);margin-top:1.5rem}
+@media(max-width:1024px){.charts{grid-template-columns:minmax(0,1fr)}}
+.chart-head{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+.chart-sub{font-size:.75rem;opacity:.55}
+.chart-box{position:relative;min-height:13rem;touch-action:pan-y}
+.chart-empty{display:grid;place-items:center;min-height:13rem;font-size:.8125rem;opacity:.5;
+  text-align:center;padding:1rem;line-height:1.7}
+svg.chart{display:block;width:100%}
+svg.chart text{font-size:.6875rem;fill:var(--bc);opacity:.5}
+svg.chart .grid-line{stroke:var(--b3);stroke-width:1}
+svg.chart .area{fill:url(#gTrend)}
+svg.chart .line{fill:none;stroke:var(--p);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+#gTrend .stop-a{stop-color:var(--p);stop-opacity:.38}
+#gTrend .stop-b{stop-color:var(--p);stop-opacity:0}
+svg.chart .hover-line{stroke:var(--p);stroke-width:1;stroke-dasharray:3 3;opacity:.6}
+svg.chart .now-line{stroke:var(--bc);stroke-width:1;opacity:.16;stroke-dasharray:2 4}
+svg.chart .now-label{font-size:.625rem;fill:var(--bc);opacity:.4}
+svg.chart .hover-dot{fill:var(--p);stroke:var(--b1);stroke-width:2}
+.chart-tip{position:absolute;top:0;left:0;pointer-events:none;background:var(--n);color:var(--nc);
+  font-size:.75rem;line-height:1.4;padding:.375rem .625rem;border-radius:var(--rounded-btn);
+  white-space:nowrap;opacity:0;transform:translate(-50%,-125%);transition:opacity .15s ease;
+  box-shadow:var(--shadow);z-index:5}
+.chart-tip.on{opacity:1}
+.chart-tip b{font-weight:700}
+
+/* 账号对比 */
+.rank{display:flex;flex-direction:column;gap:.875rem;padding-top:.25rem;flex:1;justify-content:center}
+.rank-row{display:flex;flex-direction:column;gap:.375rem;min-width:0}
+.rank-top{display:flex;align-items:baseline;justify-content:space-between;gap:.625rem}
+.rank-name{font-size:.75rem;opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.rank-val{font-size:.8125rem;font-weight:700;flex:none}
+.rank-bar{height:.5rem;border-radius:var(--rounded-box);background:var(--b3);overflow:hidden}
+.rank-bar>i{display:block;height:100%;border-radius:var(--rounded-box);
+  background:var(--p);transition:width .7s cubic-bezier(.22,1,.36,1)}
+
+/* ============ layout ============ */
+.wrap{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+  margin:2.5rem 0 1rem}
+.sec-head h2{font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
+.sec-head .meta{font-size:.8125rem;opacity:.6}
+
+/* ============ stats（概览） ============ */
+.stats{
+  display:grid;grid-template-columns:2fr repeat(4,minmax(0,1fr));
+  background:var(--b1);border-radius:var(--rounded-box);
+  box-shadow:var(--shadow);overflow:hidden;
+}
+.stat{
+  padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.375rem;
+  border-left:1px solid var(--b3);min-width:0;
+}
+.stat:first-child{border-left:none}
+.stat-title{font-size:.875rem;opacity:.6;font-weight:500;
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.stat-value{font-size:2.25rem;font-weight:800;line-height:1.05;letter-spacing:-.025em}
+.stat-value .unit{font-size:1rem;font-weight:500;opacity:.5;margin-left:.375rem;letter-spacing:0}
+.stat-desc{font-size:.75rem;opacity:.6;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+.stat-desc em{font-style:normal;opacity:.75}
+.stat .progress{margin-top:.375rem}
+.stat-split{display:flex;gap:1.5rem;margin-top:.125rem}
+.stat-split .sp{display:flex;flex-direction:column;gap:0}
+.stat-split .sp b{font-size:1.0625rem;font-weight:700;line-height:1.2}
+.stat-split .sp span{font-size:.6875rem;opacity:.6}
+
+/* ============ card ============ */
+.grid{display:grid;gap:1.5rem;grid-template-columns:repeat(auto-fill,minmax(360px,1fr))}
+@keyframes cardIn{from{opacity:0;transform:translateY(.5rem)}to{opacity:1;transform:none}}
+.grid.enter>.card{animation:cardIn .45s cubic-bezier(.22,1,.36,1) both}
+.grid.enter>.card:nth-child(2){animation-delay:.05s}
+.grid.enter>.card:nth-child(3){animation-delay:.1s}
+.grid.enter>.card:nth-child(4){animation-delay:.15s}
+.grid.enter>.card:nth-child(n+5){animation-delay:.2s}
+.card{
+  background:var(--b1);border-radius:var(--rounded-box);
+  box-shadow:var(--shadow);overflow:hidden;min-width:0;
+}
+.card-body{padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem}
+.card-title{font-size:1.0625rem;font-weight:600;line-height:1.3;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct{font-size:.75rem;opacity:.5;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  margin-top:.125rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* 今日请求 */
+.req{display:flex;flex-direction:column;gap:.625rem}
+.req-top{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem}
+.req-top .lbl{font-size:.875rem;opacity:.6}
+.req-top .num{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.req-top .num small{font-size:.875rem;font-weight:500;opacity:.45;margin-left:.25rem}
+.req-split{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.req-split .sp{
+  background:var(--b2);border-radius:var(--rounded-btn);
+  padding:.625rem .75rem;display:flex;flex-direction:column;gap:.125rem;
+}
+.req-split .sp span{font-size:.6875rem;opacity:.6}
+.req-split .sp b{font-size:1.0625rem;font-weight:700;letter-spacing:-.01em}
+
+/* 资源额度 */
+.resources{display:flex;flex-direction:column;gap:1rem;
+  padding-top:1.25rem;border-top:1px solid var(--b3)}
+.res-group{display:grid;grid-template-columns:2.75rem 1fr;gap:.875rem;align-items:start}
+.res-group>.badge{margin-top:.125rem;justify-content:center}
+.metrics{display:flex;flex-direction:column;gap:.75rem;min-width:0}
+.metric{display:flex;flex-direction:column;gap:.3125rem;min-width:0}
+.metric-top{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem;
+  font-size:.75rem;opacity:.6;white-space:nowrap;overflow:hidden}
+.metric-top .mv b{opacity:1;color:var(--bc);font-weight:600;font-size:.8125rem}
+.metric-top .mv i{font-style:normal;opacity:.75}
+
+/* 卡片底部 */
+.card-actions{display:flex;align-items:center;justify-content:space-between;gap:.75rem;
+  padding-top:1.25rem;border-top:1px solid var(--b3)}
+.ts{font-size:.75rem;opacity:.6;display:flex;align-items:center;gap:.375rem}
+.ts svg{width:.875rem;height:.875rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+.acc-more{display:none;flex-direction:column;gap:1rem}
+.card.open .acc-more{display:flex}
+.card.open .acc-more{border-top:1px solid var(--b3);padding-top:1.25rem}
+.btn .caret{transition:transform .2s ease}
+.card.open .btn .caret{transform:rotate(180deg)}
+.alert-error{
+  font-size:.75rem;color:var(--er);background:color-mix(in srgb,var(--er) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--er) 28%,transparent);
+  border-radius:var(--rounded-btn);padding:.5rem .75rem;word-break:break-word;
+}
+
+/* ============ 空 / 加载 ============ */
+.empty{padding:3.5rem 1.5rem;text-align:center;display:flex;flex-direction:column;
+  align-items:center;gap:.75rem}
+.empty .ic{width:3rem;height:3rem;border-radius:var(--rounded-box);display:grid;
+  place-items:center;background:var(--b2)}
+.empty .ic svg{width:1.5rem;height:1.5rem;stroke:currentColor;fill:none;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round;opacity:.5}
+.empty h3{font-size:1.0625rem;font-weight:600}
+.empty p{font-size:.875rem;opacity:.6;max-width:22rem;line-height:1.6}
+
+.skel{background:var(--b1);border-radius:var(--rounded-box);box-shadow:var(--shadow);
+  position:relative;overflow:hidden}
+.skel::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--bc) 8%,transparent),transparent);
+  transform:translateX(-100%);animation:shimmer 1.5s infinite;
+}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.skel-stat{height:8.5rem}
+.skel-card{height:26rem}
+
+/* ============ modal ============ */
+.modal{
+  position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.5);
+  display:none;align-items:center;justify-content:center;padding:1rem;
+}
+.modal.modal-open{display:flex;animation:fadeIn .15s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{
+  width:100%;max-width:24rem;background:var(--b1);border-radius:var(--rounded-box);
+  box-shadow:var(--shadow);padding:1.5rem;
+  animation:popIn .2s cubic-bezier(.22,1,.36,1);
+}
+@keyframes popIn{from{opacity:0;transform:translateY(.5rem) scale(.97)}to{opacity:1;transform:none}}
+.modal-box h3{font-size:1.125rem;font-weight:700}
+.modal-box .hint{font-size:.8125rem;opacity:.6;margin-top:.25rem;margin-bottom:1.25rem}
+.form-control{display:flex;flex-direction:column;gap:.375rem;margin-bottom:1rem}
+.form-control label{font-size:.8125rem;opacity:.7}
+.input{
+  height:3rem;border-radius:var(--rounded-btn);border:1px solid var(--b3);
+  background:var(--b2);color:var(--bc);padding:0 1rem;font-size:.9375rem;
+  font-family:inherit;outline:none;width:100%;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.input:focus{border-color:var(--p);box-shadow:0 0 0 3px color-mix(in srgb,var(--p) 22%,transparent)}
+.btn-block{width:100%}
+
+/* ============ toast ============ */
+.toast{
+  position:fixed;left:50%;bottom:1.5rem;transform:translate(-50%,.75rem);z-index:80;
+  max-width:calc(100vw - 2rem);padding:.75rem 1rem;border-radius:var(--rounded-box);
+  background:var(--n);color:var(--nc);font-size:.875rem;
+  box-shadow:var(--shadow);opacity:0;pointer-events:none;
+  transition:opacity .3s ease,transform .3s cubic-bezier(.22,1,.36,1);
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+
+/* ============ 响应式 ============ */
+@media(max-width:1024px){
+  .stats{grid-template-columns:minmax(0,1fr)}
+  .stat{border-left:none;border-top:1px solid var(--b3)}
+  .stat:first-child{border-top:none}
+  .stat-value{font-size:1.875rem}
+}
+@media(max-width:640px){
+  .navbar{min-height:3.5rem;padding:.5rem .75rem}
+  .brand-sub{display:none}
+  .brand-title{font-size:1rem}
+  .hide-sm{display:none}
+  .wrap{padding:1.25rem .75rem 3rem}
+  .card-body{padding:1.25rem}
+  .grid{gap:1rem;grid-template-columns:1fr}
+  .stat{padding:1rem 1.25rem}
+  .stat-value{font-size:1.75rem}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="navbar-start">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6.5 6.5 0 0 0 5.3 11.2 3.9 3.9 0 0 0 6 19h11.5z"></path></svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">Cloudflare 用量面板</div>
+        <div class="brand-sub">免费额度实时监控</div>
+      </div>
+    </div>
+  </div>
+  <div class="navbar-end">
+    <span class="badge hide-sm" id="statusChip"><span class="dot"></span><span id="statusText">加载中</span></span>
+    <button class="btn btn-square btn-ghost" id="anonBtn" title="匿名显示账号名" onclick="toggleAnon()">
+      <svg id="iconEye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+      <svg id="iconEyeOff" viewBox="0 0 24 24" style="display:none"><path d="M3 3l18 18"></path><path d="M10.6 5.1A9.9 9.9 0 0 1 12 5c5 0 9 4.5 9 7a11 11 0 0 1-2.2 3.6M6.2 6.3A12.4 12.4 0 0 0 3 12c0 2.5 4 7 9 7a9.8 9.8 0 0 0 4-.9"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>
+    </button>
+    <button class="btn btn-square btn-ghost" id="refreshBtn" title="刷新数据" onclick="refresh()">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"></path><path d="M21 4v5h-5"></path></svg>
+    </button>
+    <button class="btn btn-square btn-ghost" title="切换主题" onclick="toggleTheme()">
+      <svg id="iconSun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      <svg id="iconMoon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg>
+    </button>
+    <a class="btn btn-square btn-ghost" id="adminBtn" href="./admin" title="管理员登录">
+      <svg id="iconLock" viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="10" rx="2.2"></rect><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"></path></svg>
+      <svg id="iconGear" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </a>
+  </div>
+</div>
+
+<main class="wrap">
+  <section id="overview">
+    <div class="skel-row">
+      <div class="skel skel-stat"></div>
+      <div class="skel skel-stat"></div>
+      <div class="skel skel-stat"></div>
+      <div class="skel skel-stat"></div>
+    </div>
+  </section>
+
+  <section class="charts">
+    <div class="card">
+      <div class="card-body">
+        <div class="chart-head">
+          <div class="card-title">请求趋势</div>
+          <span class="chart-sub" id="trendSub">近 24 小时</span>
+        </div>
+        <div class="trend-tabs" id="trendTabs"></div>
+        <div class="chart-box" id="trendBox"><div class="chart-empty">加载中…</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="chart-head">
+          <div class="card-title">账号对比</div>
+          <span class="chart-sub">今日请求</span>
+        </div>
+        <div class="rank" id="rankBox"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="sec-head">
+    <h2>账号明细</h2>
+    <div class="sec-actions">
+      <span class="meta" id="accMeta">加载中…</span>
+    </div>
+  </div>
+  <section class="grid" id="accList">
+    <div class="skel skel-card"></div>
+    <div class="skel skel-card"></div>
+  </section>
+</main>
+
+
+<script>
+var TOKEN = '__TOKEN__';
+var LOGGED_IN = __LOGGED_IN__;
+var REFRESH_MS = 5 * 60 * 1000;
+var MAX_REQ = 100000;
+var state = { open: {}, timer: null, anon: false, trendSel: 'all', nameMap: {} };
+var firstLoad = true;
+
+/* ---------------- 工具 ---------------- */
+function esc(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function pct(used, limit){
+  used = Number(used) || 0; limit = Number(limit) || 0;
+  if (limit <= 0) return 0;
+  return Math.max(0, Math.min(used / limit * 100, 100));
+}
+function num(v){ return (Number(v) || 0).toLocaleString('en-US'); }
+function compact(v){
+  v = Number(v) || 0;
+  var a = Math.abs(v);
+  if (a >= 1e9) return (v / 1e9).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (a >= 1e6) return (v / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (a >= 1e3) return (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return String(v);
+}
+function fmtBytes(b){
+  b = Number(b) || 0;
+  if (b >= 1073741824) return (b / 1073741824).toFixed(2) + ' GB';
+  if (b >= 1048576) return (b / 1048576).toFixed(2) + ' MB';
+  if (b >= 1024) return (b / 1024).toFixed(1) + ' KB';
+  return b + ' B';
+}
+function ago(ts){
+  ts = Number(ts) || 0;
+  if (!ts) return '从未更新';
+  var d = Date.now() - ts;
+  if (d < 0) d = 0;
+  var m = Math.floor(d / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return m + ' 分钟前';
+  var h = Math.floor(m / 60);
+  if (h < 24) return h + ' 小时前';
+  return Math.floor(h / 24) + ' 天前';
+}
+function fullTime(ts){
+  ts = Number(ts) || 0;
+  if (!ts) return '—';
+  var d = new Date(ts);
+  function p(n){ return (n < 10 ? '0' : '') + n; }
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' +
+         p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+}
+function toneCls(p){ return p >= 85 ? 'progress-error' : (p >= 60 ? 'progress-warning' : 'progress-success'); }
+function emptyRes(){ return { d1:{}, kv:{}, r2:{} }; }
+
+/* ---------------- 主题（daisyUI data-theme） ---------------- */
+function applyTheme(light){
+  document.documentElement.setAttribute('data-theme', light ? 'light' : 'dark');
+  document.getElementById('iconSun').style.display = light ? 'block' : 'none';
+  document.getElementById('iconMoon').style.display = light ? 'none' : 'block';
+}
+function toggleTheme(){
+  var light = document.documentElement.getAttribute('data-theme') !== 'light';
+  localStorage.setItem('theme', light ? 'light' : 'dark');
+  applyTheme(light);
+}
+(function initTheme(){
+  var forced = ((location.search || '').match(/[?&]theme=(dark|light)/) || [])[1];
+  if (forced){ applyTheme(forced === 'light'); return; }
+  var saved = localStorage.getItem('theme');
+  var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  applyTheme(saved ? saved === 'light' : !!sysLight);
+})();
+
+/* ---------------- 渲染片段 ---------------- */
+function barHTML(used, limit, cls, primary){
+  var p = pct(used, limit);
+  var tone = (primary && p < 60) ? 'progress-primary' : toneCls(p);
+  return '<div class="progress' + (cls ? ' ' + cls : '') + ' ' + tone + '">' +
+         '<i style="width:' + p.toFixed(2) + '%"></i></div>';
+}
+function meterHTML(label, used, limit, fmt){
+  fmt = fmt || num;
+  return '<div class="metric">' +
+    '<div class="metric-top"><span>' + esc(label) + '</span>' +
+      '<span class="mv"><b>' + fmt(used) + '</b> <i>/ ' + fmt(limit) + '</i></span></div>' +
+    barHTML(used, limit, 'progress-sm') +
+  '</div>';
+}
+function groupHTML(tag, rows){
+  return '<div class="res-group"><span class="badge badge-ghost">' + esc(tag) + '</span>' +
+         '<div class="metrics">' + rows.join('') + '</div></div>';
+}
+
+/* ---------------- 概览 stats ---------------- */
+function renderKpis(d){
+  var t = d.totals || {};
+  var res = t.resources || emptyRes();
+  var kv = res.kv || {}, d1 = res.d1 || {}, r2 = res.r2 || {};
+  var accounts = d.accounts || [];
+  var okCount = 0;
+  for (var i = 0; i < accounts.length; i++) if (accounts[i].ok) okCount++;
+  var max = t.max || (accounts.length ? accounts.length * MAX_REQ : MAX_REQ);
+  var total = t.total || 0;
+  var p = pct(total, max);
+
+  var hero =
+    '<div class="stat">' +
+      '<div class="stat-title"><span>今日请求总量</span><span>' + p.toFixed(1) + '%</span></div>' +
+      '<div class="stat-value">' + num(total) + '<span class="unit">/ ' + num(max) + '</span></div>' +
+      barHTML(total, max, '', true) +
+      '<div class="stat-split">' +
+        '<div class="sp"><b>' + num(t.workers) + '</b><span>Workers</span></div>' +
+        '<div class="sp"><b>' + num(t.pages) + '</b><span>Pages</span></div>' +
+      '</div>' +
+    '</div>';
+
+  function mini(label, sub, used, limit){
+    var pp = pct(used, limit);
+    return '<div class="stat">' +
+      '<div class="stat-title"><span>' + esc(label) + '</span><span>' + esc(sub) + '</span></div>' +
+      '<div class="stat-value">' + num(used) + '</div>' +
+      '<div class="stat-desc"><em>上限 ' + compact(limit) + '</em><span>' + pp.toFixed(1) + '%</span></div>' +
+    '</div>';
+  }
+
+  var accStat =
+    '<div class="stat">' +
+      '<div class="stat-title"><span>监控账号</span></div>' +
+      '<div class="stat-value">' + accounts.length + '<span class="unit">个</span></div>' +
+      '<div class="stat-desc"><em>正常 ' + okCount + ' 个</em>' +
+        (accounts.length - okCount > 0
+          ? '<span style="color:var(--er)">异常 ' + (accounts.length - okCount) + ' 个</span>' : '') +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('overview').innerHTML =
+    '<div class="stats">' + hero + accStat +
+      mini('KV 读取', '今日', kv.reads, kv.readsLimit) +
+      mini('D1 行读取', '今日', d1.rowsRead, d1.rowsReadLimit) +
+      mini('R2 Class A', '本月', r2.classA, r2.classALimit) +
+    '</div>';
+}
+
+/* ---------------- 账号卡 ---------------- */
+function renderAccount(a){
+  var res = a.resources || emptyRes();
+  var kv = res.kv || {}, d1 = res.d1 || {}, r2 = res.r2 || {};
+  var total = a.total || ((a.workers || 0) + (a.pages || 0));
+  var max = a.max || MAX_REQ;
+  var open = !!state.open[a.id];
+  var st = a.ok
+    ? '<span class="badge badge-success"><span class="dot"></span>正常</span>'
+    : '<span class="badge badge-error"><span class="dot"></span>异常</span>';
+
+  var main =
+    groupHTML('KV', [
+      meterHTML('读取', kv.reads, kv.readsLimit),
+      meterHTML('写入', kv.writes, kv.writesLimit)
+    ]) +
+    groupHTML('D1', [
+      meterHTML('读取', d1.rowsRead, d1.rowsReadLimit),
+      meterHTML('写入', d1.rowsWritten, d1.rowsWrittenLimit)
+    ]) +
+    groupHTML('R2', [
+      meterHTML('Class A', r2.classA, r2.classALimit),
+      meterHTML('Class B', r2.classB, r2.classBLimit)
+    ]);
+
+  var more =
+    groupHTML('KV', [
+      meterHTML('删除/列表', (kv.deletes || 0) + (kv.lists || 0), (kv.deletesLimit || 0) + (kv.listsLimit || 0)),
+      meterHTML('存储', kv.storageBytes, kv.storageLimitBytes, fmtBytes)
+    ]) +
+    groupHTML('D1', [
+      meterHTML('存储', d1.storageBytes, d1.storageLimitBytes, fmtBytes)
+    ]) +
+    groupHTML('R2', [
+      meterHTML('存储', r2.storageBytes, r2.storageLimitBytes, fmtBytes)
+    ]);
+
+  return '<div class="card' + (open ? ' open' : '') + '" data-id="' + esc(a.id) + '">' +
+    '<div class="card-body">' +
+      '<div class="card-head">' +
+        '<div style="min-width:0">' +
+          '<div class="card-title" title="' + esc(displayName(a)) + '">' + esc(displayName(a)) + '</div>' +
+          '<div class="acct">' + esc(displayAcct(a)) + '</div>' +
+        '</div>' + st +
+      '</div>' +
+      '<div class="req">' +
+        '<div class="req-top"><span class="lbl">今日请求</span>' +
+          '<span class="num">' + num(total) + '<small>/ ' + num(max) + '</small></span></div>' +
+        barHTML(total, max, '', true) +
+        '<div class="req-split">' +
+          '<div class="sp"><span>Workers</span><b>' + num(a.workers) + '</b></div>' +
+          '<div class="sp"><span>Pages</span><b>' + num(a.pages) + '</b></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="resources">' + main + '</div>' +
+      (open ? '<div class="acc-more">' + more + '</div>' : '') +
+      (a.ok ? '' : '<div class="alert-error">' + esc(a.msg || '最近一次查询失败') + '</div>') +
+      '<div class="card-actions">' +
+        '<span class="ts" title="' + fullTime(a.updateTime) + '">' +
+          '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>' +
+          esc(ago(a.updateTime)) +
+        '</span>' +
+        '<button class="btn btn-sm btn-ghost" onclick="toggleAcc(\'' + esc(a.id) + '\')">' +
+          (open ? '收起' : '详情') +
+          '<svg class="caret" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"></path></svg>' +
+        '</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderAccounts(d, animate){
+  var list = document.getElementById('accList');
+  var meta = document.getElementById('accMeta');
+  var accounts = (d && d.accounts) || [];
+  if (!accounts.length){
+    meta.textContent = '';
+    list.className = 'grid';
+    list.innerHTML =
+      '<div class="card" style="grid-column:1/-1">' +
+        '<div class="empty">' +
+          '<div class="ic"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"></path></svg></div>' +
+          '<h3>还没有添加账号</h3>' +
+          '<p>点击右上角的锁图标登录管理面板，添加 Cloudflare 账号后即可在这里看到各账号的实时用量。</p>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+  meta.textContent = accounts.length + ' 个账号 · 更新于 ' + ago(d.UpdateTime);
+  var html = '';
+  for (var i = 0; i < accounts.length; i++) html += renderAccount(accounts[i]);
+  list.className = 'grid' + (animate ? ' enter' : '');
+  list.innerHTML = html;
+  if (animate) setTimeout(function(){ list.className = 'grid'; }, 900);
+}
+
+/* ---------------- 匿名显示（账户 A / B / C） ---------------- */
+function letterFor(i){
+  var s = '', n = (Number(i) || 0) + 1;
+  while (n > 0){
+    var r = (n - 1) % 26;
+    s = String.fromCharCode(65 + r) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+}
+function displayName(a){
+  if (!state.anon) return (a && a.name) || '未命名';
+  var idx = state.nameMap[a.id];
+  return '账户 ' + letterFor(typeof idx === 'number' ? idx : 0);
+}
+function displayAcct(a){
+  if (state.anon) return '••••••••••••';
+  return (a && a.accountId) || '—';
+}
+function applyAnonIcon(){
+  var on = document.getElementById('iconEye');
+  var off = document.getElementById('iconEyeOff');
+  var btn = document.getElementById('anonBtn');
+  if (btn) btn.style.display = LOGGED_IN ? '' : 'none';   // 访客不允许切换
+  if (on) on.style.display = state.anon ? 'none' : 'block';
+  if (off) off.style.display = state.anon ? 'block' : 'none';
+  if (btn) btn.title = state.anon ? '显示真实账号名' : '匿名显示账号名（账户 A/B/C）';
+}
+function toggleAnon(){
+  if (!LOGGED_IN) return;
+  state.anon = !state.anon;
+  try { localStorage.setItem('lcup-anon', state.anon ? '1' : '0'); } catch(e){}
+  applyAnonIcon();
+  if (state.data){
+    renderAccounts(state.data, false);
+    renderTrendTabs();
+    renderRank(state.data.accounts);
+    drawTrend();
+  }
+}
+
+/* ---------------- 趋势数据源 ---------------- */
+function trendData(){
+  var d = state.data;
+  if (!d) return [];
+  if (state.trendSel === 'all') return ((d.totals && d.totals.trend) || []).slice();
+  var accs = d.accounts || [];
+  for (var i = 0; i < accs.length; i++){
+    if (String(accs[i].id) === String(state.trendSel)) return (accs[i].trend || []).slice();
+  }
+  return [];
+}
+function currentTrendLabel(){
+  if (state.trendSel === 'all') return '全部账号合计';
+  var accs = (state.data && state.data.accounts) || [];
+  for (var i = 0; i < accs.length; i++){
+    if (String(accs[i].id) === String(state.trendSel)) return displayName(accs[i]);
+  }
+  return '未知账号';
+}
+function renderTrendTabs(){
+  var box = document.getElementById('trendTabs');
+  if (!box) return;
+  var accs = (state.data && state.data.accounts) || [];
+  if (!accs.length){ box.innerHTML = ''; return; }
+  var html = '<button class="trend-tab' + (state.trendSel === 'all' ? ' active' : '') +
+             '" onclick="pickTrend(\'all\')">全部账号</button>';
+  for (var i = 0; i < accs.length; i++){
+    var a = accs[i];
+    html += '<button class="trend-tab' + (String(state.trendSel) === String(a.id) ? ' active' : '') +
+            (a.ok ? '' : ' err') + '" onclick="pickTrend(' + esc(JSON.stringify(a.id)) + ')">' +
+            esc(displayName(a)) + '</button>';
+  }
+  box.innerHTML = html;
+}
+function pickTrend(id){
+  state.trendSel = id;
+  renderTrendTabs();
+  drawTrend();
+}
+
+/* ---------------- 手动刷新 ---------------- */
+async function refresh(){
+  var btn = document.getElementById('refreshBtn');
+  if (btn) btn.classList.add('loading');
+  await load(false, true);
+  if (btn) btn.classList.remove('loading');
+}
+
+function toggleAcc(id){
+  state.open[id] = !state.open[id];
+  var list = document.getElementById('accList');
+  var node = list && list.querySelector ? list.querySelector('.card[data-id="' + id + '"]') : null;
+  var acc = null;
+  if (state.data && state.data.accounts){
+    for (var i = 0; i < state.data.accounts.length; i++){
+      if (String(state.data.accounts[i].id) === String(id)){ acc = state.data.accounts[i]; break; }
+    }
+  }
+  if (node && acc && typeof node.outerHTML === 'string') node.outerHTML = renderAccount(acc);
+  else renderAccounts(state.data, false);
+}
+
+function setStatus(kind, text){
+  var chip = document.getElementById('statusChip');
+  chip.className = 'badge hide-sm' +
+    (kind === 'ok' ? ' badge-success' : kind === 'warn' ? ' badge-warning' : ' badge-error');
+  document.getElementById('statusText').textContent = text;
+}
+
+function toast(msg){
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  requestAnimationFrame(function(){ el.classList.add('on'); });
+  setTimeout(function(){
+    el.classList.remove('on');
+    setTimeout(function(){ el.remove(); }, 320);
+  }, 3200);
+}
+
+async function load(silent, force){
+  try{
+    var url = './accounts.json?token=' + encodeURIComponent(TOKEN) + '&t=' + Date.now();
+    if (force) url += '&force=1';
+    var r = await fetch(url, { cache:'no-store' });
+    var d = await r.json();
+    if (!d || !d.success) throw new Error((d && d.msg) || '数据不可用');
+    state.data = d;
+    state.nameMap = {};
+    for (var k = 0; k < (d.accounts || []).length; k++) state.nameMap[d.accounts[k].id] = k;
+    renderKpis(d);
+    renderAccounts(d, firstLoad);
+    renderTrendTabs();
+    drawTrend();
+    renderRank(d.accounts);
+    firstLoad = false;
+    var bad = 0;
+    for (var i = 0; i < (d.accounts || []).length; i++) if (!d.accounts[i].ok) bad++;
+    if (bad > 0) setStatus('warn', bad + ' 个账号异常');
+    else setStatus('ok', '数据正常');
+    if (!silent) toast(d.msg || '数据已更新');
+  }catch(err){
+    setStatus('err', '获取失败');
+    document.getElementById('overview').innerHTML =
+      '<div class="card"><div class="empty">' +
+        '<div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle>' +
+        '<path d="M12 8v5M12 16.5v.01"></path></svg></div>' +
+        '<h3>数据获取失败</h3><p>' + esc(err.message || '未知错误') + '</p>' +
+      '</div></div>';
+    document.getElementById('accList').innerHTML = '';
+    document.getElementById('accMeta').textContent = '';
+  }
+}
+
+/* ---------------- 图表 ---------------- */
+function niceMax(v){
+  if (!v || v <= 0) return 10;
+  var exp = Math.floor(Math.log10(v));
+  var base = Math.pow(10, exp);
+  var n = v / base;
+  var m = n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10;
+  return m * base;
+}
+function pad2(n){ return (n < 10 ? '0' : '') + n; }
+
+function trendWindow(){
+  var BJ = 8 * 3600000;
+  var nowMs = Date.now();
+  var d = new Date(nowMs + BJ);
+  var start = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 8) - BJ;
+  if (d.getUTCHours() < 8) start -= 86400000;
+  return { start: start, end: start + 24 * 3600000 };
+}
+function bjHourOf(t){ return new Date(Number(t) + 8 * 3600000).getUTCHours(); }
+
+function drawTrend(){
+  var box = document.getElementById('trendBox');
+  if (!box) return;
+  var win = trendWindow();
+  var raw = trendData();
+  var map = {}, i;
+  for (i = 0; i < raw.length; i++){
+    var tt = Number(raw[i].t);
+    if (tt >= win.start && tt < win.end) map[tt] = Number(raw[i].v) || 0;
+  }
+  var lastIdx = -1;
+  for (i = 0; i < 24; i++) if (map[win.start + i * 3600000] !== undefined) lastIdx = i;
+  var nowMs = Date.now();
+  var curIdx = Math.floor((Math.min(nowMs, win.end - 1) - win.start) / 3600000);
+  var limit = Math.min(lastIdx, curIdx, 23);
+  var data = [];
+  for (i = 0; i <= limit; i++){
+    var slot = win.start + i * 3600000;
+    data.push({ t: slot, v: map[slot] || 0 });
+  }
+  var sub = document.getElementById('trendSub');
+  if (sub) sub.textContent = '北京 08:00 – 次日 08:00 · ' + currentTrendLabel();
+  if (data.length < 2){
+    box.innerHTML = '<div class="chart-empty">' +
+      (state.trendSel === 'all'
+        ? '本时段暂无数据<br>每天北京时间 08:00 开启新的统计周期'
+        : '该账号本时段暂无数据') +
+      '</div>';
+    return;
+  }
+  var W = box.clientWidth || 720;
+  var H = 208;
+  var padL = 46, padR = 12, padT = 20, padB = 26;
+  var iw = Math.max(10, W - padL - padR);
+  var ih = H - padT - padB;
+  var maxV = 0;
+  for (i = 0; i < data.length; i++) maxV = Math.max(maxV, data[i].v);
+  var top = niceMax(maxV);
+  function X(i){ return padL + iw * i / 23; }
+  function Y(v){ return padT + ih * (1 - Math.min(Number(v) || 0, top) / top); }
+
+  var line = '';
+  for (i = 0; i < data.length; i++) line += (i ? ' L' : 'M') + X(i).toFixed(1) + ' ' + Y(data[i].v).toFixed(1);
+  var area = line + ' L' + X(data.length - 1).toFixed(1) + ' ' + (padT + ih) +
+             ' L' + X(0).toFixed(1) + ' ' + (padT + ih) + ' Z';
+
+  var grid = '', ticks = '', g;
+  for (g = 0; g <= 4; g++){
+    var y = padT + ih * g / 4;
+    grid += '<line class="grid-line" x1="' + padL + '" y1="' + y.toFixed(1) +
+            '" x2="' + (padL + iw) + '" y2="' + y.toFixed(1) + '"/>';
+    ticks += '<text x="' + (padL - 8) + '" y="' + (y + 3.5).toFixed(1) + '" text-anchor="end">' +
+             compact(top * (1 - g / 4)) + '</text>';
+  }
+  for (i = 0; i < 24; i += 4){
+    ticks += '<text x="' + X(i).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="middle">' +
+             pad2(bjHourOf(win.start + i * 3600000)) + ':00</text>';
+  }
+
+  var nowIdx = Math.floor((nowMs - win.start) / 3600000);
+  var nowMark = '';
+  if (nowIdx >= 0 && nowIdx <= 23){
+    var nx = X(nowIdx).toFixed(1);
+    nowMark = '<line class="now-line" x1="' + nx + '" y1="' + padT + '" x2="' + nx +
+              '" y2="' + (padT + ih) + '"/>' +
+              '<text class="now-label" x="' + nx + '" y="' + (padT - 6) + '" text-anchor="middle">现在</text>';
+  }
+
+  box.innerHTML =
+    '<svg class="chart" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' +
+      '<defs><linearGradient id="gTrend" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop class="stop-a" offset="0%"/><stop class="stop-b" offset="100%"/>' +
+      '</linearGradient></defs>' +
+      grid + nowMark + ticks +
+      '<path class="area" d="' + area + '"/>' +
+      '<path class="line" d="' + line + '"/>' +
+      '<g id="trendHover" style="display:none">' +
+        '<line class="hover-line" y1="' + padT + '" y2="' + (padT + ih) + '"/>' +
+        '<circle class="hover-dot" r="4"/>' +
+      '</g>' +
+      '<rect id="trendHit" x="' + padL + '" y="' + padT + '" width="' + iw + '" height="' + ih +
+        '" fill="transparent"/>' +
+    '</svg>' +
+    '<div class="chart-tip" id="trendTip"></div>';
+
+  var hit = document.getElementById('trendHit');
+  var hov = document.getElementById('trendHover');
+  var tip = document.getElementById('trendTip');
+  if (!hit || !hov || !tip || !hit.addEventListener) return;
+
+  var hideTimer = 0, startX = 0, startY = 0;
+  function hideTip(){
+    hov.style.display = 'none';
+    tip.classList.remove('on');
+  }
+  function moveTo(clientX){
+    var r = hit.getBoundingClientRect();
+    if (!r.width) return;
+    var idx = Math.round(((clientX - r.left) / r.width) * 23);
+    idx = Math.max(0, Math.min(data.length - 1, idx));
+    var px = X(idx), py = Y(data[idx].v);
+    var ln = hov.querySelector('.hover-line');
+    var dot = hov.querySelector('.hover-dot');
+    if (ln){ ln.setAttribute('x1', px); ln.setAttribute('x2', px); }
+    if (dot){ dot.setAttribute('cx', px); dot.setAttribute('cy', py); }
+    hov.style.display = '';
+    var h = bjHourOf(data[idx].t);
+    tip.innerHTML = '北京 ' + pad2(h) + ':00–' + pad2((h + 1) % 24) + ':00 · <b>' +
+                    num(data[idx].v) + '</b>';
+    tip.classList.add('on');
+    tip.style.top = Math.max(40, py - 8) + 'px';
+    var half = (tip.offsetWidth || 0) / 2 + 6;
+    tip.style.left = Math.max(half, Math.min(W - half, px)) + 'px';
+  }
+
+  hit.addEventListener('mousemove', function(e){ moveTo(e.clientX); });
+  hit.addEventListener('mouseleave', hideTip);
+  hit.addEventListener('touchstart', function(e){
+    if (hideTimer) clearTimeout(hideTimer);
+    if (e.touches && e.touches[0]){
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      moveTo(startX);
+    }
+  }, { passive: true });
+  hit.addEventListener('touchmove', function(e){
+    if (!e.touches || !e.touches[0]) return;
+    var dx = Math.abs(e.touches[0].clientX - startX);
+    var dy = Math.abs(e.touches[0].clientY - startY);
+    if (dx > dy){                 // 横向滑动才接管，纵向留给页面滚动
+      moveTo(e.touches[0].clientX);
+      e.preventDefault();
+    }
+  }, { passive: false });
+  hit.addEventListener('touchend', function(){
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(hideTip, 2600);
+  });
+  hit.addEventListener('touchcancel', hideTip);
+}
+
+function renderRank(accounts){
+  var box = document.getElementById('rankBox');
+  if (!box) return;
+  var list = (accounts || []).slice().sort(function(a, b){ return (b.total || 0) - (a.total || 0); });
+  if (!list.length){
+    box.innerHTML = '<div class="chart-empty" style="min-height:6rem">暂无账号</div>';
+    return;
+  }
+  var max = Math.max(1, list[0].total || 0);
+  var html = '';
+  for (var i = 0; i < list.length; i++){
+    var a = list[i];
+    var w = (a.total || 0) / max * 100;
+    html += '<div class="rank-row">' +
+      '<div class="rank-top">' +
+        '<span class="rank-name" title="' + esc(displayName(a)) + '">' + esc(displayName(a)) + '</span>' +
+        '<span class="rank-val">' + num(a.total) + '</span>' +
+      '</div>' +
+      '<div class="rank-bar"><i style="width:' + w.toFixed(1) + '%;' +
+        (a.ok ? '' : 'background:var(--er)') + '"></i></div>' +
+    '</div>';
+  }
+  box.innerHTML = html;
+}
+
+if (window && typeof window.addEventListener === 'function'){
+  var rtTimer = 0;
+  window.addEventListener('resize', function(){
+    if (rtTimer) clearTimeout(rtTimer);
+    rtTimer = setTimeout(drawTrend, 180);
+  });
+}
+
+/* ---------------- 登录态校正 ---------------- */
+async function checkSession(){
+  try{
+    var r = await fetch('./api/me?t=' + Date.now(), { cache: 'no-store' });
+    var d = await r.json();
+    var logged = !!(d && d.logged);
+    if (logged === LOGGED_IN) return;
+    LOGGED_IN = logged;
+    applyAdminIcon();
+    if (!logged){                       // 掉登录 → 立刻切回匿名
+      state.anon = true;
+      applyAnonIcon();
+      if (state.data){
+        renderAccounts(state.data, false);
+        renderTrendTabs();
+        renderRank(state.data.accounts);
+        drawTrend();
+      }
+    }
+  }catch(e){}
+}
+
+/* ---------------- 启动 ---------------- */
+(function loadAnon(){
+  // 访客（未登录）一律匿名，避免公开页面暴露账号信息
+  if (!LOGGED_IN){ state.anon = true; return; }
+  var forced = ((location.search || '').match(/[?&]anon=(1|0)/) || [])[1];
+  if (forced){ state.anon = forced === '1'; return; }
+  try { state.anon = localStorage.getItem('lcup-anon') === '1'; } catch(e){ state.anon = false; }
+})();
+applyAnonIcon();
+(function applyAdminIcon(){
+  var lock = document.getElementById('iconLock');
+  var gear = document.getElementById('iconGear');
+  var btn = document.getElementById('adminBtn');
+  if (!lock || !gear || !btn) return;
+  lock.style.display = LOGGED_IN ? 'none' : 'block';
+  gear.style.display = LOGGED_IN ? 'block' : 'none';
+  btn.title = LOGGED_IN ? '管理面板' : '管理员登录';
+})();
+checkSession();
+load(true);
+state.timer = setInterval(function(){ load(true); }, REFRESH_MS);
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden) load(true);
+});
+</script>
+</body>
+</html>

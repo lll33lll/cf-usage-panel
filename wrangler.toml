@@ -1,0 +1,16 @@
+name = "usage-panel"
+main = "dist/worker.js"
+compatibility_date = "2026-01-10"
+keep_vars = true
+
+# KV 命名空间绑定 —— 变量名必须是 KV，不能改
+[[kv_namespaces]]
+binding = "KV"
+id = ""
+
+[vars]
+USERNAME = "admin"
+
+# PASSWORD 请用密钥方式设置，不要写在 wrangler.toml 里：
+#   wrangler secret put PASSWORD
+# 或在 Dashboard → Workers → 设置 → 变量 → 添加，类型选「密钥」

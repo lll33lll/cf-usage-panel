@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · Cloudflare 用量面板</title>
+<link rel="icon" href="https://cf-assets.www.cloudflare.com/dzlvafdwdttg/5uhbWfhjepEoUiM9phzhgJ/9658369030266cde9e35a3c5d4e4beb2/cloud-upload.svg">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#570df8; --pc:#ffffff;
+  --b1:#ffffff; --b2:#f2f2f2; --b3:#e5e6e6; --bc:#1f2937;
+  --er:#f87272;
+  --rounded-box:1rem; --rounded-btn:.5rem;
+  --shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);
+}
+html[data-theme="dark"]{
+  --p:#661AE6; --pc:#ffffff;
+  --b1:#1d232a; --b2:#191e24; --b3:#15191e; --bc:#A6ADBB;
+  --shadow:0 20px 25px -5px rgba(0,0,0,.3),0 8px 10px -6px rgba(0,0,0,.3);
+}
+body{
+  font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',
+    'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  background:var(--b2);color:var(--bc);
+  min-height:100vh;display:grid;place-items:center;padding:1.5rem;
+  font-size:1rem;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+.card{width:100%;max-width:23rem;background:var(--b1);border-radius:var(--rounded-box);
+  box-shadow:var(--shadow);overflow:hidden;animation:pop .25s cubic-bezier(.22,1,.36,1)}
+@keyframes pop{from{opacity:0;transform:translateY(.75rem) scale(.98)}to{opacity:1;transform:none}}
+.card-body{padding:2rem 1.75rem;display:flex;flex-direction:column;gap:1rem}
+.brand{display:flex;align-items:center;gap:.875rem;margin-bottom:.5rem}
+.brand-mark{width:2.75rem;height:2.75rem;flex:none;border-radius:var(--rounded-btn);
+  display:grid;place-items:center;background:var(--p);color:var(--pc)}
+.brand-mark svg{width:1.625rem;height:1.625rem;stroke:currentColor;fill:none;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round}
+.brand-text{display:flex;flex-direction:column;min-width:0}
+.brand-title{font-size:1.125rem;font-weight:700;line-height:1.25}
+.brand-sub{font-size:.75rem;opacity:.6;line-height:1.3}
+.form-control{display:flex;flex-direction:column;gap:.375rem}
+.form-control label{font-size:.8125rem;opacity:.7}
+.input{
+  height:3rem;border-radius:var(--rounded-btn);border:1px solid var(--b3);
+  background:var(--b2);color:var(--bc);padding:0 1rem;font-size:.9375rem;
+  font-family:inherit;outline:none;width:100%;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.input:focus{border-color:var(--p);box-shadow:0 0 0 3px color-mix(in srgb,var(--p) 22%,transparent)}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  height:2.75rem;padding:0 1rem;border-radius:var(--rounded-btn);border:none;
+  background:var(--p);color:var(--pc);font-size:.9375rem;font-weight:600;
+  font-family:inherit;cursor:pointer;transition:filter .15s ease;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.alert-error{
+  font-size:.8125rem;color:var(--er);background:color-mix(in srgb,var(--er) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--er) 28%,transparent);
+  border-radius:var(--rounded-btn);padding:.625rem .875rem;line-height:1.5;
+}
+.back{text-align:center;font-size:.8125rem;opacity:.55;text-decoration:none;color:inherit;
+  margin-top:.25rem;transition:opacity .15s ease}
+.back:hover{opacity:.9}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="card-body">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24"><path d="M17.5 19a4.5 4.5 0 0 0 .5-8.97A6.5 6.5 0 0 0 5.3 11.2 3.9 3.9 0 0 0 6 19h11.5z"></path></svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">管理面板</div>
+        <div class="brand-sub">Cloudflare 用量面板</div>
+      </div>
+    </div>
+    <div id="err" class="alert-error" style="display:none"></div>
+    <div class="form-control">
+      <label for="inUser">管理员账号</label>
+      <input class="input" id="inUser" type="text" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="form-control">
+      <label for="inPass">密码</label>
+      <input class="input" id="inPass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn" id="loginBtn" onclick="doLogin()">登 录</button>
+    <a class="back" href="./">← 返回主页</a>
+  </div>
+</div>
+<script>
+function initTheme(){
+  var forced = ((location.search || '').match(/[?&]theme=(dark|light)/) || [])[1];
+  if (forced){ document.documentElement.setAttribute('data-theme', forced); return; }
+  var saved = localStorage.getItem('theme');
+  var sysLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  document.documentElement.setAttribute('data-theme', saved ? saved : (sysLight ? 'light' : 'dark'));
+}
+initTheme();
+function showErr(msg){
+  var el = document.getElementById('err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+async function doLogin(){
+  var btn = document.getElementById('loginBtn');
+  var username = document.getElementById('inUser').value || 'admin';
+  var password = document.getElementById('inPass').value;
+  if (!password){ showErr('请输入密码'); document.getElementById('inPass').focus(); return; }
+  btn.disabled = true; btn.textContent = '登录中…';
+  document.getElementById('err').style.display = 'none';
+  try{
+    var r = await fetch('./api/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username, password: password })
+    });
+    var d = await r.json();
+    if (d.success){ location.replace('./admin'); return; }
+    showErr(d.msg || '登录失败');
+  }catch(e){
+    showErr('网络错误，请重试');
+  }finally{
+    btn.disabled = false; btn.textContent = '登 录';
+  }
+}
+document.getElementById('inPass').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('inUser').focus();
+</script>
+</body>
+</html>

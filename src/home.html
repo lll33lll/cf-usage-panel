@@ -10,8 +10,8 @@
 
 /* ============ daisyUI 语义色板 ============ */
 :root{
-  --p:#570df8;  --pc:#ffffff;
-  --s:#f000b8;  --sc:#ffffff;
+  --p:#F6821F;  --pc:#ffffff;
+  --s:#FBAD41;  --sc:#1a1a1a;
   --a:#37cdbe;  --ac:#163835;
   --n:#3d4451;  --nc:#ffffff;
   --b1:#ffffff; --b2:#f2f2f2; --b3:#e5e6e6;
@@ -24,8 +24,8 @@
   --shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);
 }
 html[data-theme="dark"]{
-  --p:#661AE6;  --pc:#ffffff;
-  --s:#D926AA;  --sc:#ffffff;
+  --p:#F6821F;  --pc:#ffffff;
+  --s:#FBAD41;  --sc:#1a1a1a;
   --a:#1FB2A5;  --ac:#ffffff;
   --n:#2a323c;  --nc:#A6ADBB;
   --b1:#1d232a; --b2:#191e24; --b3:#15191e;
@@ -44,6 +44,7 @@ body{
 ::selection{background:color-mix(in srgb,var(--p) 30%,transparent)}
 
 /* ============ navbar ============ */
+.navbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,#F6821F,#FBAD41 38%,transparent 88%);pointer-events:none}
 .navbar{
   position:sticky;top:0;z-index:30;
   display:flex;align-items:center;justify-content:space-between;gap:1rem;
@@ -55,6 +56,7 @@ body{
 .brand-mark{width:2.5rem;height:2.5rem;flex:none;display:grid;place-items:center}
 .brand-mark svg{width:2.25rem;height:2.25rem;fill:#F6821F}
 .brand-text{display:flex;flex-direction:column;min-width:0}
+.cf-accent{color:#F6821F}
 .brand-title{font-size:1.125rem;font-weight:600;line-height:1.25;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .brand-sub{font-size:.75rem;opacity:.6;line-height:1.2}
@@ -182,6 +184,7 @@ svg.chart .hover-dot{fill:var(--p);stroke:var(--b1);stroke-width:2}
 .wrap{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}
 .sec-head{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
   margin:2.5rem 0 1rem}
+.sec-head h2::before{content:"";display:inline-block;width:4px;height:.9em;background:linear-gradient(180deg,#FBAD41,#F6821F);border-radius:2px;margin-right:.5rem;vertical-align:-.06em}
 .sec-head h2{font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
 .sec-head .meta{font-size:.8125rem;opacity:.6}
 
@@ -360,7 +363,7 @@ svg.chart .hover-dot{fill:var(--p);stroke:var(--b1);stroke-width:2}
         <svg viewBox="0 0 24 24" role="img" aria-label="Cloudflare"><path fill="#F6821F" d="M16.5088 16.8447c.1475-.5068.0908-.9707-.1553-1.3154-.2246-.3164-.6045-.499-1.0615-.5205l-8.6592-.1123a.1559.1559 0 0 1-.1333-.0713c-.0283-.042-.0351-.0986-.021-.1553.0278-.084.1123-.1484.2036-.1562l8.7359-.1123c1.0351-.0489 2.1601-.8868 2.5537-1.9136l.499-1.3013c.0215-.0561.0293-.1128.0147-.168-.5625-2.5463-2.835-4.4453-5.5499-4.4453-2.5039 0-4.6284 1.6177-5.3876 3.8614-.4927-.3658-1.1187-.5625-1.794-.499-1.2026.119-2.1665 1.083-2.2861 2.2856-.0283.31-.0069.6128.0635.894C1.5683 13.171 0 14.7754 0 16.752c0 .1748.0142.3515.0352.5273.0141.083.0844.1475.1689.1475h15.9814c.0909 0 .1758-.0645.2032-.1553l.12-.4268zm2.7568-5.5634c-.0771 0-.1611 0-.2383.0112-.0566 0-.1054.0415-.127.0976l-.3378 1.1744c-.1475.5068-.0918.9707.1543 1.3164.2256.3164.6055.498 1.0625.5195l1.8437.1133c.0557 0 .1055.0263.1329.0703.0283.043.0351.1074.0214.1562-.0283.084-.1132.1485-.204.1553l-1.921.1123c-1.041.0488-2.1582.8867-2.5527 1.914l-.1406.3585c-.0283.0713.0215.1416.0986.1416h6.5977c.0771 0 .1474-.0489.169-.126.1122-.4082.1757-.837.1757-1.2803 0-2.6025-2.125-4.727-4.7344-4.727"></path></svg>
       </div>
       <div class="brand-text">
-        <div class="brand-title">Cloudflare 用量面板</div>
+        <div class="brand-title"><span class="cf-accent">Cloudflare</span> 用量面板</div>
         <div class="brand-sub">免费额度实时监控</div>
       </div>
     </div>

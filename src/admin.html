@@ -8,8 +8,8 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --p:#570df8;  --pc:#ffffff;
-  --s:#f000b8;  --sc:#ffffff;
+  --p:#F6821F;  --pc:#ffffff;
+  --s:#FBAD41;  --sc:#1a1a1a;
   --a:#37cdbe;  --ac:#163835;
   --n:#3d4451;  --nc:#ffffff;
   --b1:#ffffff; --b2:#f2f2f2; --b3:#e5e6e6;
@@ -19,8 +19,8 @@
   --shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);
 }
 html[data-theme="dark"]{
-  --p:#661AE6;  --pc:#ffffff;
-  --s:#D926AA;  --sc:#ffffff;
+  --p:#F6821F;  --pc:#ffffff;
+  --s:#FBAD41;  --sc:#1a1a1a;
   --a:#1FB2A5;  --ac:#ffffff;
   --n:#2a323c;  --nc:#A6ADBB;
   --b1:#1d232a; --b2:#191e24; --b3:#15191e;
@@ -38,6 +38,7 @@ body{
 ::selection{background:color-mix(in srgb,var(--p) 30%,transparent)}
 
 /* navbar */
+.navbar::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,#F6821F,#FBAD41 38%,transparent 88%);pointer-events:none}
 .navbar{
   position:sticky;top:0;z-index:30;
   display:flex;align-items:center;justify-content:space-between;gap:1rem;
@@ -104,6 +105,7 @@ body{
 .wrap{max-width:1200px;margin:0 auto;padding:2rem 1rem 4rem}
 .sec-head{display:flex;align-items:center;justify-content:space-between;gap:1rem;
   margin:2.5rem 0 1rem;flex-wrap:wrap}
+.sec-head h2::before{content:"";display:inline-block;width:4px;height:.9em;background:linear-gradient(180deg,#FBAD41,#F6821F);border-radius:2px;margin-right:.5rem;vertical-align:-.06em}
 .sec-head h2{font-size:1.25rem;font-weight:700;letter-spacing:-.01em}
 .sec-head .meta{font-size:.8125rem;opacity:.6}
 

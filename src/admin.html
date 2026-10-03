@@ -8,7 +8,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --p:#F6821F;  --pc:#ffffff;
+  --p:#0051C3;  --pc:#ffffff;  --cf:#F6821F;--cf2:#FBAD41;--cfb:#0051C3;
   --s:#FBAD41;  --sc:#1a1a1a;
   --a:#37cdbe;  --ac:#163835;
   --n:#3d4451;  --nc:#ffffff;
@@ -19,7 +19,7 @@
   --shadow:0 20px 25px -5px rgba(0,0,0,.1),0 8px 10px -6px rgba(0,0,0,.1);
 }
 html[data-theme="dark"]{
-  --p:#F6821F;  --pc:#ffffff;
+  --p:#3B82F6;  --pc:#ffffff;  --cf:#F6821F;--cf2:#FBAD41;--cfb:#3B82F6;
   --s:#FBAD41;  --sc:#1a1a1a;
   --a:#1FB2A5;  --ac:#ffffff;
   --n:#2a323c;  --nc:#A6ADBB;
@@ -96,7 +96,8 @@ body{
 .progress>i{display:block;height:100%;width:0;border-radius:var(--rounded-box);
   background:var(--p);transition:width .7s cubic-bezier(.22,1,.36,1)}
 .progress-sm{height:.375rem}
-.progress-primary>i{background:var(--p)}
+.progress-cf>i{background:var(--cf)}
+.progress-info>i{background:var(--cfb)}
 .progress-success>i{background:var(--su)}
 .progress-warning>i{background:var(--wa)}
 .progress-error>i{background:var(--er)}
@@ -434,7 +435,7 @@ function fullTime(ts){
   return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' +
          p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
 }
-function toneCls(p){ return p >= 85 ? 'progress-error' : (p >= 60 ? 'progress-warning' : 'progress-success'); }
+function toneCls(p){ return p >= 85 ? 'progress-error' : (p >= 60 ? 'progress-warning' : 'progress-info'); }
 function emptyRes(){ return { d1:{}, kv:{}, r2:{} }; }
 
 /* ---------- 主题 ---------- */
@@ -482,7 +483,7 @@ function renderOverview(d){
     '<div class="stat">' +
       '<div class="stat-title"><span>今日请求总量</span><span>' + p.toFixed(1) + '%</span></div>' +
       '<div class="stat-value">' + num(total) + '<span class="unit">/ ' + num(max) + '</span></div>' +
-      '<div class="progress progress-primary"><i style="width:' + p.toFixed(2) + '%"></i></div>' +
+      '<div class="progress progress-cf"><i style="width:' + p.toFixed(2) + '%"></i></div>' +
       '<div class="stat-split">' +
         '<div class="sp"><b>' + num(d.workers) + '</b><span>Workers</span></div>' +
         '<div class="sp"><b>' + num(d.pages) + '</b><span>Pages</span></div>' +

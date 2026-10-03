@@ -201,6 +201,7 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
   box-shadow:var(--shadow);overflow:hidden;
 }
 .stats.cols-6{grid-template-columns:2fr repeat(5,minmax(0,1fr))}
+.stat-sep{height:1px;background:var(--b3);margin:.5rem 0}
 .stat{
   padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:.375rem;
   border-left:1px solid var(--b3);min-width:0;
@@ -440,7 +441,7 @@ svg.chart .hover-dot{fill:var(--cf);stroke:var(--b1);stroke-width:2}
       <div class="card-body">
         <div class="chart-head">
           <div class="card-title">账号对比</div>
-          <span class="chart-sub">今日请求</span>
+          <span class="chart-sub" id="rankSub">今日请求</span>
         </div>
         <div class="rank" id="rankBox"></div>
       </div>
@@ -602,25 +603,27 @@ function renderKpis(d){
   var paidT = sumByPlan(accounts, true);
   var hasFree = freeT.count > 0, hasPaid = paidT.count > 0;
 
-  function heroHTML(label, sub, tt){
+  function heroBlock(label, sub, tt, withBar){
     var mx = tt.max || (tt.count ? tt.count * MAX_REQ : MAX_REQ);
     var pp = pct(tt.total, mx);
-    return '<div class="stat">' +
-      '<div class="stat-title"><span>' + esc(label) + '</span><span>' + pp.toFixed(1) + '%</span></div>' +
+    return '<div class="stat-title"><span>' + esc(label) + '</span><span>' + pp.toFixed(1) + '%</span></div>' +
       '<div class="stat-value">' + num(tt.total) + '<span class="unit">/ ' + num(mx) + '</span></div>' +
       barHTML(tt.total, mx, '', true) +
       '<div class="stat-split">' +
         '<div class="sp"><b>' + num(tt.workers) + '</b><span>Workers</span></div>' +
         '<div class="sp"><b>' + num(tt.pages) + '</b><span>Pages</span></div>' +
       '</div>' +
-      (sub ? '<div class="stat-desc"><em>' + esc(sub) + '</em></div>' : '') +
-    '</div>';
+      (sub ? '<div class="stat-desc"><em>' + esc(sub) + '</em></div>' : '');
+  }
+  function heroHTML(label, sub, tt, extra){
+    return '<div class="stat">' + heroBlock(label, sub, tt) + (extra || '') + '</div>';
   }
 
-  var hero, paidCard = '';
+  var hero;
   if (hasFree && hasPaid){
-    hero = heroHTML('免费账号 · 今日请求', freeT.count + ' 个免费账号', freeT);
-    paidCard = heroHTML('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT);
+    // 混合：主卡上半是免费账号（今日），下半是付费账号（本月）
+    hero = heroHTML('免费账号 · 今日请求', freeT.count + ' 个免费账号', freeT,
+      '<div class="stat-sep"></div>' + heroBlock('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT));
   } else if (hasPaid){
     hero = heroHTML('付费账号 · 本月请求', paidT.count + ' 个付费账号', paidT);
   } else {
@@ -652,7 +655,6 @@ function renderKpis(d){
   var dayLabel = hasFree ? '今日' : '本月';
 
   var cells = [hero, accStat];
-  if (paidCard) cells.push(paidCard);
   cells.push(mini('KV 读取', dayLabel, mkv.reads, mkv.readsLimit));
   cells.push(mini('D1 行读取', dayLabel, md1.rowsRead, md1.rowsReadLimit));
   cells.push(mini('R2 Class A', '本月', mr2.classA, mr2.classALimit));
@@ -661,6 +663,10 @@ function renderKpis(d){
   box.innerHTML = '<div class="stats">' + cells.join('') + '</div>';
   var statsEl = box.querySelector('.stats');
   if (statsEl) statsEl.classList.toggle('cols-6', cells.length > 5);
+
+  // 账号对比的副标题跟着套餐口径
+  var rankSub = document.getElementById('rankSub');
+  if (rankSub) rankSub.textContent = (hasFree && hasPaid) ? '请求量' : (hasFree ? '今日请求' : '本月请求');
 }
 
 /* ---------------- 账号卡 ---------------- */
@@ -1113,7 +1119,11 @@ function drawTrend(){
 function renderRank(accounts){
   var box = document.getElementById('rankBox');
   if (!box) return;
-  var list = (accounts || []).slice().sort(function(a, b){ return (b.total || 0) - (a.total || 0); });
+  // 按「占各自套餐上限的比例」排序，混合场景下免费/付费才可比
+  var list = (accounts || []).slice().sort(function(a, b){
+    var pa = (a.total || 0) / (a.max || 100000), pb = (b.total || 0) / (b.max || 100000);
+    return pb - pa;
+  });
   if (!list.length){
     box.innerHTML = '<div class="chart-empty" style="min-height:6rem">暂无账号</div>';
     return;

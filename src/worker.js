@@ -228,7 +228,7 @@ export default {
                             const existingAccount = usage_config_json[existingIndex];
                             CF_JSON.ID = existingAccount.ID; // 保留原有 ID
                             usage_config_json[existingIndex] = CF_JSON;
-                            await env.KV.put('usage_config.json', JSON.stringify(usage_config_json));
+                            await env.KV.put('usage_config.json', 序列化账号配置(usage_config_json));
 
                             return new Response(JSON.stringify({ success: true, msg: '账号已存在，已更新账号信息', data: { ID: CF_JSON.ID, Name: CF_JSON.Name } }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                         }
@@ -240,7 +240,7 @@ export default {
 
                         // 添加到配置数组中并保存到 KV
                         usage_config_json.push(CF_JSON);
-                        await env.KV.put('usage_config.json', JSON.stringify(usage_config_json));
+                        await env.KV.put('usage_config.json', 序列化账号配置(usage_config_json));
 
                         return new Response(JSON.stringify({ success: true, msg: '账号添加成功', data: { ID: CF_JSON.ID, Name: CF_JSON.Name } }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                     } catch (error) {
@@ -310,7 +310,7 @@ export default {
                         }
 
                         usage_config_json[targetIndex] = account;
-                        await env.KV.put('usage_config.json', JSON.stringify(usage_config_json));
+                        await env.KV.put('usage_config.json', 序列化账号配置(usage_config_json));
 
                         return new Response(JSON.stringify({
                             success: true,
@@ -351,7 +351,7 @@ export default {
                         usage_config_json.splice(targetIndex, 1);
 
                         // 保存回 KV
-                        await env.KV.put('usage_config.json', JSON.stringify(usage_config_json));
+                        await env.KV.put('usage_config.json', 序列化账号配置(usage_config_json));
 
                         return new Response(JSON.stringify({ success: true, msg: `账号 "${deletedName}" 已删除`, data: { ID: deleteId, Name: deletedName } }), { status: 200, headers: { 'Content-Type': 'application/json;charset=utf-8' } });
                     } catch (error) {
@@ -615,6 +615,16 @@ function 获取账号最后更新时间(account) {
     return Number(account?.UpdateTime || account?.Usage?.UpdateTime || 0) || 0;
 }
 
+// 序列化账号配置：顺手剔除旧版本遗留的 Plan 字段（套餐功能已移除）
+function 序列化账号配置(列表) {
+    const 干净 = (列表 || []).map(a => {
+        const 副本 = { ...a };
+        delete 副本.Plan;
+        return 副本;
+    });
+    return JSON.stringify(干净);
+}
+
 function 补全账号Usage结构(account) {
     const usage = 补全Usage结构(account?.Usage || {});
     delete usage.UpdateTime;
@@ -649,7 +659,7 @@ async function 更新请求数(env, options = {}) {
     if (!usage_config_json) {
         // 不存在则创建一个空的配置文件
         usage_config_json = [];
-        await env.KV.put('usage_config.json', JSON.stringify(usage_config_json));
+        await env.KV.put('usage_config.json', 序列化账号配置(usage_config_json));
         usage_json.success = true;
         usage_json.resources = 创建汇总资源统计();
         usage_json.msg = '⚠️ 尚未添加任何Cloudflare账号';
@@ -723,7 +733,7 @@ async function 更新请求数(env, options = {}) {
         }
 
         // 遍历完成后保存 usage_config_json 回 KV
-        await env.KV.put('usage_config.json', JSON.stringify(usage_config_json));
+        await env.KV.put('usage_config.json', 序列化账号配置(usage_config_json));
 
         // 将所有账号的数据累加到 usage_json 中并保存回 KV
         usage_json.success = true;

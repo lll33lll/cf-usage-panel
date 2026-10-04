@@ -1,0 +1,68 @@
+name: patch
+
+# 一次性工作流：给 worker.js 打一个小补丁（完成后本文件会被删除）
+on:
+  push:
+    paths:
+      - '.github/workflows/patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Apply patch
+        run: |
+          set -euo pipefail
+          python3 - <<'PYEOF'
+          import io
+          p = 'src/worker.js'
+          s = io.open(p, encoding='utf-8').read()
+
+          anchor = "function 补全账号Usage结构(account) {"
+          assert anchor in s, 'anchor missing'
+          assert '序列化账号配置' not in s, 'already patched'
+
+          helper = """// 序列化账号配置：顺手剔除旧版本遗留的 Plan 字段（套餐功能已移除）
+          function 序列化账号配置(列表) {
+              const 干净 = (列表 || []).map(a => {
+                  const 副本 = { ...a };
+                  delete 副本.Plan;
+                  return 副本;
+              });
+              return JSON.stringify(干净);
+          }
+
+          """
+          s = s.replace(anchor, helper + anchor, 1)
+
+          n = s.count("JSON.stringify(usage_config_json)")
+          assert n == 6, f'expected 6 call sites, got {n}'
+          s = s.replace("JSON.stringify(usage_config_json)", "序列化账号配置(usage_config_json)")
+          assert s.count("序列化账号配置(usage_config_json)") == 6
+
+          io.open(p, 'w', encoding='utf-8').write(s)
+          print('patched ok')
+          PYEOF
+
+      - name: Build and test
+        run: |
+          set -euo pipefail
+          node build.js
+          node test/run.js
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "no changes"; exit 0; fi
+          git commit -m "fix: 保存账号配置时剔除旧版本遗留的 Plan 字段"
+          git push

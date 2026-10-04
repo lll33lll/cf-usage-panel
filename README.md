@@ -6,8 +6,6 @@
 
 多账号 · 请求趋势 · 匿名模式 · daisyUI 风格
 
-<sub>基于 [cmliu/CF-Workers-UsagePanel](https://github.com/cmliu/CF-Workers-UsagePanel) 二次开发，界面与交互完全重写</sub>
-
 </div>
 
 ---
@@ -124,7 +122,7 @@ npx wrangler deploy
 | `/api/me` | 查询当前登录状态 |
 | `/api/add` · `/api/edit` · `/api/del` | 添加 / 修改 / 删除账号 |
 | `/accounts.json` | 账号级数据接口（含趋势），需要 token 参数 |
-| `/usage.json` | 汇总数据接口（兼容上游），需要 token 参数 |
+| `/usage.json` | 汇总数据接口，需要 token 参数 |
 
 ## 本地开发
 
@@ -149,15 +147,15 @@ dist/worker.js  # 构建产物（.gitignore，部署用）
 
 > 三个 HTML 都刻意**不使用反引号和 `${}`**，这样 build 注入到模板字符串时只需要极少的转义，避免踩坑。
 
-## 与上游的差异
+## 功能亮点
 
-- 主页从「所有账号汇总成一张卡」改为**每账号一张独立卡片**
-- 新增请求趋势图（按北京时区业务日）与账号对比图
-- 新增匿名模式与登录态感知的顶栏按钮
-- 管理面板、登录页完整重做，与主页统一为 daisyUI 风格
-- 新增 `/accounts.json`、`/api/me` 接口
-- 新增账号编辑（改名、改 API 信息）
-- 移除上游页脚署名、移除管理面板的「复制 API 地址」按钮
+- 主页**每账号一张独立卡片**，不把请求量混成一个总数
+- 请求趋势图（按北京时区业务日）与账号对比图，纯手写 SVG，零依赖
+- 匿名模式 + 登录态感知的顶栏按钮
+- 管理面板、登录页与主页统一为 daisyUI 风格
+- `/accounts.json` 账号级数据接口、`/api/me` 登录态接口
+- 账号编辑（改名、改 API 信息）
+- 无页脚署名，管理面板也不带「复制 API 地址」按钮
 
 ## 常见问题
 
@@ -175,9 +173,8 @@ Cloudflare 的免费额度按 UTC 自然日重置，而 UTC 00:00 正好等于�
 
 ## 致谢
 
-- 上游项目：[cmliu/CF-Workers-UsagePanel](https://github.com/cmliu/CF-Workers-UsagePanel)
 - UI 设计参考 [daisyUI](https://daisyui.com/) 的语义色板与组件规范
 
 ## License
 
-[GPL-3.0](LICENSE) —— 因衍生自 GPLv3 项目，本项目同样以 GPLv3 开源。
+[GPL-3.0](LICENSE)
